@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+<title>Lucky Draw Participant</title>
+<script src='https://cdn.tailwindcss.com'></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<script type='module'>
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAc53UEPP9_bz0W3iBmhghKROPL-FhsQCg",
+  authDomain: "luckydraw-oml.firebaseapp.com",
+  projectId: "luckydraw-oml",
+  storageBucket: "luckydraw-oml.firebasestorage.app",
+  messagingSenderId: "147642717383",
+  appId: "1:147642717383:web:a6c3663bed4c0dede25ae2",
+  measurementId: "G-MKN8QVYDYD"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+let prizes=[];
+
+window.checkWinner = function(){
+  const num = document.getElementById('participantNumber').value.trim();
+  if(!num){ alert('Enter your ticket number'); return; }
+
+  let found = false;
+  let prizeName = '';
+  for(const prize of prizes){
+    if(prize.tickets.includes(num)){
+      found = true;
+      prizeName = prize.name;
+      break;
+    }
+  }
+
+  const resultEl = document.getElementById('result');
+  if(found){
+    resultEl.innerHTML=`<span class='text-green-600 text-2xl font-bold'>🎉 Congratulations! You won: <b>${prizeName}</b></span>`;
+    // Trigger confetti
+    confetti({
+      particleCount: 150,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#a78bfa','#f472b6','#60a5fa','#34d399','#facc15']
+    });
+  } else {
+    resultEl.innerHTML=`<span class='text-gray-700 text-xl'>No winning prize yet.</span>`;
+  }
+};
+
+onSnapshot(collection(db,'prizes'), snapshot=>{
+  prizes = snapshot.docs.map(d=>d.data());
+});
+</script>
+</head>
+<body class='bg-gradient-to-br from-purple-500 to-pink-500 min-h-screen flex items-center justify-center p-6'>
+<div class='w-full max-w-md bg-white rounded-2xl shadow-lg p-8 text-center'>
+  <h1 class='text-4xl font-extrabold text-purple-600 mb-6 animate-bounce'>🎉 Lucky Draw 🎉</h1>
+  <p class='text-gray-600 mb-4'>Enter your ticket number to see if you won!</p>
+  <input id='participantNumber' type='text' placeholder='Enter Your Ticket Number' class='w-full border rounded-lg p-3 mb-3 text-center'/>
+  <button onclick='checkWinner()' class='bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg w-full transition transform hover:scale-105'>Check</button>
+  <p id='result' class='mt-6 font-bold'></p>
+</div>
+</body>
+</html>

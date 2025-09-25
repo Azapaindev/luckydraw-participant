@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="kh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lucky Draw Participant</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<style>
+@keyframes shake {0% {transform: translateX(0);} 25% {transform: translateX(-5px);} 50% {transform: translateX(5px);} 75% {transform: translateX(-5px);} 100% {transform: translateX(0);}}
+.shake {animation: shake 0.5s;}
+.glow {text-shadow: 0 0 8px #f87171, 0 0 12px #f87171;}
+</style>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyAc53UEPP9_bz0W3iBmhghKROPL-FhsQCg",
+  authDomain: "luckydraw-oml.firebaseapp.com",
+  projectId: "luckydraw-oml",
+  storageBucket: "luckydraw-oml.firebasestorage.app",
+  messagingSenderId: "147642717383",
+  appId: "1:147642717383:web:a6c3663bed4c0dede25ae2",
+  measurementId: "G-MKN8QVYDYD"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+let prizes = [];
+
+// Listen for live updates
+onSnapshot(collection(db,'prizes'), snapshot=>{
+  prizes = snapshot.docs.map(d => ({id:d.id, ...d.data()}));
+  renderWinningList();
+});
+
+// Check participant ticket
+function checkWinner(){
+  const num = document.getElementById('participantNumber').value.trim();
+  const resultEl = document.getElementById('result');
+  resultEl.classList.remove('shake','glow');
+
+  if(!num){ resultEl.innerHTML=''; return; }
+
+  let found = false;
+  let prizeName = '';
+  for(const prize of prizes){
+    if(prize.tickets && prize.tickets.includes(num)){
+      found = true;
+      prizeName = prize.name;
+      break;
+    }
+  }
+
+  if(found){
+    resultEl.innerHTML=`<span class='text-green-600 text-2xl font-bold'>🎉 អបអរសាទរ! អ្នកឈ្នះ: <b>${prizeName}</b></span>`;
+    confetti({particleCount:150, spread:70, origin:{y:0.6}, colors:['#a78bfa','#f472b6','#60a5fa','#34d399','#facc15']});
+  } else {
+    resultEl.innerHTML=`<span class='text-gray-700 text-xl'>មិនមានរង្វាន់ឈ្នះនៅឡើយទេ�।</span>`;
+    resultEl.classList.add('shake','glow');
+  }
+}
+
+// Render all winning tickets grouped by category
+function renderWinningList(){
+  const listEl = document.getElementById('winningList');
+  listEl.innerHTML = '';
+  
+  // Group tickets by prize
+  const groupedPrizes = {};
+  prizes.forEach(prize => {
+    if (prize.tickets && prize.tickets.length > 0) {
+      groupedPrizes[prize.name] = prize.tickets;
+    }
+  });
+
+  // Render each prize category
+  for (const [prizeName, tickets] of Object.entries(groupedPrizes)) {
+    const categoryDiv = document.createElement('div');
+    categoryDiv.className = 'mb-4';
+    
+    const heading = document.createElement('h3');
+    heading.className = 'text-lg font-bold text-purple-600 mb-2';
+    heading.textContent = `រង្វាន់: ${prizeName}`;
+    categoryDiv.appendChild(heading);
+    
+    const ticketList = document.createElement('ul');
+    ticketList.className = 'pl-4';
+    
+    tickets.forEach(ticket => {
+      const li = document.createElement('li');
+      li.className = 'mb-1 p-1 border rounded bg-gray-50';
+      li.textContent = `លេខសន្លឹកឆ្នោត: ${ticket}`;
+      ticketList.appendChild(li);
+    });
+    
+    categoryDiv.appendChild(ticketList);
+    listEl.appendChild(categoryDiv);
+  }
+}
+
+// Auto-check on input
+document.addEventListener('DOMContentLoaded', ()=>{
+  const input = document.getElementById('participantNumber');
+  input.addEventListener('input', checkWinner);
+});
+</script>
+</head>
+<body class="bg-gradient-to-br from-purple-500 to-pink-500 min-h-screen flex items-center justify-center p-6">
+<div class="w-full max-w-md bg-white rounded-2xl shadow-lg p-6">
+  <h1 class="text-2xl font-extrabold text-purple-600 mb-6 text-center animate-bounce">🎉Lucky Draw🎉</h1>
+
+  <!-- Tabs -->
+  <div class="flex mb-4 justify-center space-x-2">
+    <button onclick="showTab('check')" class="tabBtn bg-purple-600 text-white px-4 py-2 rounded">ពិនិត្យលេខសន្លឹកឆ្នោត</button>
+    <button onclick="showTab('all')" class="tabBtn bg-gray-300 text-gray-700 px-4 py-2 rounded">សន្លឹកឆ្នោតឈ្នះទាំងអស់</button>
+  </div>
+
+  <!-- Check Ticket Tab -->
+  <div id="tab-check">
+    <input id="participantNumber" type="text" placeholder="បញ្ចូលលេខសន្លឹកឆ្នោត" class="w-full border rounded-lg p-3 mb-3 text-center"/>
+    <p id="result" class="mt-4 font-bold text-center"></p>
+  </div>
+
+  <!-- All Winning Tickets Tab -->
+  <div id="tab-all" class="hidden">
+    <ul id="winningList" class="max-h-64 overflow-y-auto"></ul>
+  </div>
+</div>
+
+<script>
+// Tab switching
+function showTab(tab){
+  document.getElementById('tab-check').classList.toggle('hidden', tab!=='check');
+  document.getElementById('tab-all').classList.toggle('hidden', tab!=='all');
+  // Update button colors
+  document.querySelectorAll('.tabBtn').forEach(btn=>{
+    btn.classList.remove('bg-purple-600','text-white');
+    btn.classList.remove('bg-gray-300','text-gray-700');
+  });
+  if(tab==='check') document.querySelectorAll('.tabBtn')[0].classList.add('bg-purple-600','text-white');
+  else document.querySelectorAll('.tabBtn')[1].classList.add('bg-purple-600','text-white');
+}
+showTab('check'); // default tab
+</script>
+</body>
+</html>

@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="kh">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Lucky Draw Participant</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -11,11 +11,11 @@
 .shake {animation: shake 0.5s;}
 .glow {text-shadow: 0 0 8px #f87171, 0 0 12px #f87171;}
 </style>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
-// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyAc53UEPP9_bz0W3iBmhghKROPL-FhsQCg",
   authDomain: "luckydraw-oml.firebaseapp.com",
@@ -28,124 +28,174 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+
 let prizes = [];
 
-// Listen for live updates
-onSnapshot(collection(db,'prizes'), snapshot=>{
-  prizes = snapshot.docs.map(d => ({id:d.id, ...d.data()}));
+// ---------------- Lucky Draw check ----------------
+onSnapshot(collection(db, 'prizes'), snapshot => {
+  prizes = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
   renderWinningList();
 });
 
-// Check participant ticket
-function checkWinner(){
+function checkWinner() {
   const num = document.getElementById('participantNumber').value.trim();
   const resultEl = document.getElementById('result');
-  resultEl.classList.remove('shake','glow');
+  resultEl.classList.remove('shake', 'glow');
+  if (!num) { resultEl.innerHTML = ''; return; }
 
-  if(!num){ resultEl.innerHTML=''; return; }
-
-  let found = false;
-  let prizeName = '';
-  for(const prize of prizes){
-    if(prize.tickets && prize.tickets.includes(num)){
-      found = true;
-      prizeName = prize.name;
-      break;
+  let found = false, prizeName = '';
+  for (const prize of prizes) {
+    if (prize.tickets && prize.tickets.includes(num)) {
+      found = true; prizeName = prize.name; break;
     }
   }
 
-  if(found){
-    resultEl.innerHTML=`<span class='text-green-600 text-2xl font-bold'>🎉 អបអរសាទរ! អ្នកឈ្នះ: <b>${prizeName}</b></span>`;
-    confetti({particleCount:150, spread:70, origin:{y:0.6}, colors:['#a78bfa','#f472b6','#60a5fa','#34d399','#facc15']});
+  if (found) {
+    resultEl.innerHTML = `<span class='text-green-600 text-2xl font-bold'>🎉 អបអរសាទរ! អ្នកឈ្នះ: <b>${prizeName}</b></span>`;
+    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
   } else {
-    resultEl.innerHTML=`<span class='text-gray-700 text-xl'>មិនមានរង្វាន់ឈ្នះនៅឡើយទេ�।</span>`;
+    resultEl.innerHTML = `<span class='text-gray-700 text-xl'>មិនមានរង្វាន់ឈ្នះនៅឡើយទេ។</span>`;
     resultEl.classList.add('shake','glow');
   }
 }
 
-// Render all winning tickets grouped by category
-function renderWinningList(){
+function renderWinningList() {
   const listEl = document.getElementById('winningList');
   listEl.innerHTML = '';
-  
-  // Group tickets by prize
-  const groupedPrizes = {};
+  const grouped = {};
   prizes.forEach(prize => {
-    if (prize.tickets && prize.tickets.length > 0) {
-      groupedPrizes[prize.name] = prize.tickets;
-    }
+    if (prize.tickets && prize.tickets.length > 0) grouped[prize.name] = prize.tickets;
   });
-
-  // Render each prize category
-  for (const [prizeName, tickets] of Object.entries(groupedPrizes)) {
-    const categoryDiv = document.createElement('div');
-    categoryDiv.className = 'mb-4';
-    
-    const heading = document.createElement('h3');
-    heading.className = 'text-lg font-bold text-purple-600 mb-2';
-    heading.textContent = `រង្វាន់: ${prizeName}`;
-    categoryDiv.appendChild(heading);
-    
-    const ticketList = document.createElement('ul');
-    ticketList.className = 'pl-4';
-    
-    tickets.forEach(ticket => {
+  for (const [prizeName, tickets] of Object.entries(grouped)) {
+    const div = document.createElement('div');
+    div.className = 'mb-4';
+    const h = document.createElement('h3');
+    h.className = 'text-lg font-bold text-purple-600 mb-2';
+    h.textContent = `រង្វាន់: ${prizeName}`;
+    div.appendChild(h);
+    const ul = document.createElement('ul');
+    ul.className = 'pl-4';
+    tickets.forEach(t => {
       const li = document.createElement('li');
       li.className = 'mb-1 p-1 border rounded bg-gray-50';
-      li.textContent = `លេខសន្លឹកឆ្នោត: ${ticket}`;
-      ticketList.appendChild(li);
+      li.textContent = `លេខសន្លឹកឆ្នោត: ${t}`;
+      ul.appendChild(li);
     });
-    
-    categoryDiv.appendChild(ticketList);
-    listEl.appendChild(categoryDiv);
+    div.appendChild(ul);
+    listEl.appendChild(div);
   }
 }
 
-// Auto-check on input
-document.addEventListener('DOMContentLoaded', ()=>{
-  const input = document.getElementById('participantNumber');
-  input.addEventListener('input', checkWinner);
+// ---------------- Staff lookup ----------------
+function normalizeId(raw) {
+  if (!raw) return null;
+  const digits = (''+raw).replace(/\D/g,'');
+  if (digits==='') return null;
+  return String(parseInt(digits,10));
+}
+
+async function lookupStaff() {
+  const raw = document.getElementById('staffIdInput').value.trim();
+  const resultArea = document.getElementById('staffResult');
+  resultArea.innerHTML = '';
+  if (!raw) return;
+
+  const normalized = normalizeId(raw) || raw;
+  try {
+    const snap = await getDoc(doc(db,'staffs',normalized));
+    if (snap.exists()) return renderStaffData(snap.data());
+    const snap2 = await getDoc(doc(db,'staffs',raw));
+    if (snap2.exists()) return renderStaffData(snap2.data());
+    resultArea.innerHTML = `<div class="text-sm text-red-600">រកមិនឃើញព័ត៌មានសម្រាប់ "${raw}"</div>`;
+  } catch (err) {
+    resultArea.innerHTML = `<div class="text-sm text-red-600">បរាជ័យក្នុងការស្វែងរក: ${err.message}</div>`;
+  }
+}
+
+function renderStaffData(data) {
+  const resultArea = document.getElementById('staffResult');
+  const name = escapeHtml(data.fullName||'');
+  const grp = escapeHtml(data.group||'');
+  const bus = escapeHtml(data.bus||'');
+  const hotel = escapeHtml(data.hotel||'');
+  const room = escapeHtml(data.roomNumber||'');
+  const roles = escapeHtml(data.roles||'');
+  const telegram = data.telegramLink || '';
+
+  let html = `<div class="p-4 border rounded bg-white shadow-sm">`;
+  html += `<div class="text-lg font-bold mb-2">${name}</div>`;
+  html += `<div class="grid grid-cols-2 gap-2 text-sm mb-2">`;
+  html += `<div><b>Group</b><div>${grp||'-'}</div></div>`;
+  html += `<div><b>Bus</b><div>${bus||'-'}</div></div>`;
+  html += `<div><b>Hotel</b><div>${hotel||'-'}</div></div>`;
+  html += `<div><b>Room</b><div>${room||'-'}</div></div>`;
+  html += `</div>`;
+  if (roles) html += `<div class="mb-2"><b>Roles:</b> ${roles}</div>`;
+  if (telegram) {
+    html += `<div class="mt-2"><a href="${escapeHtml(telegram)}" target="_blank" class="inline-block px-3 py-2 bg-blue-600 text-white rounded">Join Telegram Group</a></div>`;
+  }
+  html += `</div>`;
+  resultArea.innerHTML = html;
+}
+
+function escapeHtml(s){return String(s||'').replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+// Auto-check inputs
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('participantNumber').addEventListener('input',checkWinner);
+  document.getElementById('staffIdInput').addEventListener('input',()=>{
+    clearTimeout(window._staffTimer);
+    window._staffTimer=setTimeout(lookupStaff,400);
+  });
 });
 </script>
 </head>
+
 <body class="bg-gradient-to-br from-purple-500 to-pink-500 min-h-screen flex items-center justify-center p-6">
-<div class="w-full max-w-md bg-white rounded-2xl shadow-lg p-6">
-  <h1 class="text-2xl font-extrabold text-purple-600 mb-6 text-center animate-bounce">🎉Lucky Draw🎉</h1>
+  <div class="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-6">
+    <h1 class="text-2xl font-extrabold text-purple-600 mb-6 text-center animate-bounce">OML   កម្លាំង មហាសាគរ</h1>
 
-  <!-- Tabs -->
-  <div class="flex mb-4 justify-center space-x-2">
-    <button onclick="showTab('check')" class="tabBtn bg-purple-600 text-white px-4 py-2 rounded">ពិនិត្យលេខសន្លឹកឆ្នោត</button>
-    <button onclick="showTab('all')" class="tabBtn bg-gray-300 text-gray-700 px-4 py-2 rounded">សន្លឹកឆ្នោតឈ្នះទាំងអស់</button>
-  </div>
+    <!-- Tabs -->
+    <div class="flex mb-4 justify-center space-x-2">
+      <button onclick="showTab('check')" class="tabBtn bg-purple-600 text-white px-4 py-2 rounded">ពិនិត្យលេខសន្លឹកឆ្នោត</button>
+      <button onclick="showTab('all')" class="tabBtn bg-gray-300 text-gray-700 px-4 py-2 rounded">សន្លឹកឆ្នោតឈ្នះទាំងអស់</button>
+      <button onclick="showTab('staff')" class="tabBtn bg-gray-300 text-gray-700 px-4 py-2 rounded">ស្វែងរក ពត័មានរបស់អ្នក</button>
+    </div>
 
-  <!-- Check Ticket Tab -->
-  <div id="tab-check">
-    <input id="participantNumber" type="text" placeholder="បញ្ចូលលេខសន្លឹកឆ្នោត" class="w-full border rounded-lg p-3 mb-3 text-center"/>
-    <p id="result" class="mt-4 font-bold text-center"></p>
-  </div>
+    <!-- Check Ticket -->
+    <div id="tab-check">
+      <input id="participantNumber" type="text" placeholder="បញ្ចូលលេខសន្លឹកឆ្នោត" class="w-full border rounded-lg p-3 mb-3 text-center"/>
+      <p id="result" class="mt-4 font-bold text-center"></p>
+    </div>
 
-  <!-- All Winning Tickets Tab -->
-  <div id="tab-all" class="hidden">
-    <ul id="winningList" class="max-h-64 overflow-y-auto"></ul>
+    <!-- All Tickets -->
+    <div id="tab-all" class="hidden">
+      <ul id="winningList" class="max-h-64 overflow-y-auto"></ul>
+    </div>
+
+    <!-- Staff Info -->
+    <div id="tab-staff" class="hidden">
+      <div class="mb-3">
+        <input id="staffIdInput" type="text" placeholder="បញ្ចូលលេខបុគ្គលិក (ឧ. 000168 ឬ 168)" class="w-full border rounded-lg p-3"/>
+      </div>
+      <div id="staffResult"></div>
+    </div>
   </div>
-</div>
 
 <script>
-// Tab switching
 function showTab(tab){
-  document.getElementById('tab-check').classList.toggle('hidden', tab!=='check');
-  document.getElementById('tab-all').classList.toggle('hidden', tab!=='all');
-  // Update button colors
+  document.getElementById('tab-check').classList.toggle('hidden',tab!=='check');
+  document.getElementById('tab-all').classList.toggle('hidden',tab!=='all');
+  document.getElementById('tab-staff').classList.toggle('hidden',tab!=='staff');
   document.querySelectorAll('.tabBtn').forEach(btn=>{
     btn.classList.remove('bg-purple-600','text-white');
-    btn.classList.remove('bg-gray-300','text-gray-700');
+    btn.classList.add('bg-gray-300','text-gray-700');
   });
   if(tab==='check') document.querySelectorAll('.tabBtn')[0].classList.add('bg-purple-600','text-white');
-  else document.querySelectorAll('.tabBtn')[1].classList.add('bg-purple-600','text-white');
+  else if(tab==='all') document.querySelectorAll('.tabBtn')[1].classList.add('bg-purple-600','text-white');
+  else document.querySelectorAll('.tabBtn')[2].classList.add('bg-purple-600','text-white');
 }
-showTab('check'); // default tab
+showTab('check');
 </script>
 </body>
-
 </html>
-

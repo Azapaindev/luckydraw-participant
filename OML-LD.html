@@ -9,7 +9,78 @@
 <style>
 @keyframes shake {0% {transform: translateX(0);} 25% {transform: translateX(-5px);} 50% {transform: translateX(5px);} 75% {transform: translateX(-5px);} 100% {transform: translateX(0);}}
 .shake {animation: shake 0.5s;}
-.glow {text-shadow: 0 0 8px #3b82f6, 0 0 12px #3b82f6;} /* blue glow */
+.glow {text-shadow: 0 0 4px #0ea5e9, 0 0 8px #0ea5e9;} /* reduced ocean blue glow */
+.glow-teal {text-shadow: 0 0 5px #3b82f6, 0 0 10px #3b82f6;} /* reduced */
+@keyframes gentleFloat {0%, 100% {transform: translateY(0px) rotate(0deg);} 50% {transform: translateY(-5px) rotate(1deg);}}
+.gentle-float {animation: gentleFloat 4s ease-in-out infinite;}
+@keyframes softWave {0%, 100% {transform: translateX(0) translateY(0);} 50% {transform: translateX(5px) translateY(-2px);}}
+.soft-wave {animation: softWave 3s ease-in-out infinite;}
+@keyframes ripple {0% {transform: scale(0.8); opacity: 1;} 100% {transform: scale(1.2); opacity: 0;}}
+.ripple {animation: ripple 2s infinite;}
+.wave-bg {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 40%;
+  background: linear-gradient(to top, #1e3a8a, #1d4ed8, #0ea5e9);
+  z-index: -1;
+}
+.wave1 {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 200%;
+  height: 100px;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none"><path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".25" fill="%230ea5e9"></path><path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s66.68-14,97.48-24.87c34.58-10.85,76.6-21.27,117.73-16.01C1112.2,14.68,1121.73,43.93,1211,90.23V0Z" opacity=".25" fill="%230ea5e9"></path><path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z" opacity=".15" fill="%230ea5e9"></path></svg>');
+  animation: wave 20s linear infinite;
+}
+.wave2 {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 200%;
+  height: 80px;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none"><path d="M985.66,92.83C906.67,72,823.78,31,743.84,14.19c-82.26-17.34-168.06-16.33-250.45.39-57.84,11.73-114,31.07-172,41.86A600.21,600.21,0,0,1,0,27.35V120H1200V95.8C1132.58,118.92,1055.89,130,978.2,130.88H857.84C826.21,130,801.33,125.4,776.72,115.68l-1-0.33C661.23,99.67,610.69,91.08,574.94,84.04S526.92,75.05,500.9,65.43c-25.07-10.62-47.8-19.31-70.69-27.64a227.58,227.58,0,0,1-85.8-60.94c-66.37-82.21-72.21-151.03-87-190.26-4.69-13.31-10.6-27.92-18.65-41.6A32.09,32.09,0,0,0,229.58,0H0V120H1200V95.8Z" opacity=".25" fill="%233b82f6"></path></svg>');
+  animation: wave 15s linear infinite reverse;
+}
+@keyframes wave {
+  0% { transform: translateX(0) translateZ(0) scaleY(1); }
+  50% { transform: translateX(-25%) translateZ(0) scaleY(0.55); }
+  100% { transform: translateX(-50%) translateZ(0) scaleY(1); }
+}
+.chill-card {
+  transition: all 0.4s ease;
+  transform: perspective(1000px) rotateX(0deg);
+}
+.chill-card:hover {
+  transform: perspective(1000px) rotateX(3deg) translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+.neon-input:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3), 0 0 15px rgba(14, 165, 233, 0.2);
+  border-color: #3b82f6;
+}
+.neon-button {
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.neon-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(14, 165, 233, 0.3);
+}
+.logo {
+  max-width: 100%;
+  height: auto;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+}
+.staff-label {
+  white-space: nowrap;
+}
+@media (max-width: 768px) {
+  .wave-bg { height: 30%; }
+  .wave1, .wave2 { height: 60px; }
+}
 </style>
 
 <script type="module">
@@ -51,10 +122,10 @@ function checkWinner() {
   }
 
   if (found) {
-    resultEl.innerHTML = `<span class='text-blue-600 text-2xl font-bold'>🎉 អបអរសាទរ! អ្នកឈ្នះ: <b>${prizeName}</b></span>`;
-    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#3b82f6','#60a5fa','#93c5fd'] });
+    resultEl.innerHTML = `<span class='text-blue-400 text-2xl font-bold glow-teal'>🎉 អបអរសាទរ! អ្នកឈ្នះ: <b>${prizeName}</b></span>`;
+    confetti({ particleCount: 100, spread: 60, origin: { y: 0.6 }, colors: ['#0ea5e9','#3b82f6','#1d4ed8', '#1e40af'] });
   } else {
-    resultEl.innerHTML = `<span class='text-gray-700 text-xl'>មិនមានរង្វាន់ឈ្នះនៅឡើយទេ។</span>`;
+    resultEl.innerHTML = `<span class='text-gray-300 text-xl'>មិនមានរង្វាន់ឈ្នះនៅឡើយទេ។</span>`;
     resultEl.classList.add('shake','glow');
   }
 }
@@ -68,16 +139,16 @@ function renderWinningList() {
   });
   for (const [prizeName, tickets] of Object.entries(grouped)) {
     const div = document.createElement('div');
-    div.className = 'mb-4';
+    div.className = 'mb-4 chill-card bg-gradient-to-r from-blue-500/10 to-blue-600/10 border border-blue-200 rounded-xl p-4';
     const h = document.createElement('h3');
-    h.className = 'text-lg font-bold text-blue-600 mb-2';
+    h.className = 'text-lg font-bold text-white mb-2';
     h.textContent = `រង្វាន់: ${prizeName}`;
     div.appendChild(h);
     const ul = document.createElement('ul');
-    ul.className = 'pl-4';
+    ul.className = 'pl-4 space-y-1';
     tickets.forEach(t => {
       const li = document.createElement('li');
-      li.className = 'mb-1 p-1 border rounded bg-blue-50';
+      li.className = 'mb-1 p-2 border rounded-lg bg-white/20 backdrop-blur-sm border-blue-200';
       li.textContent = `លេខសន្លឹកឆ្នោត: ${t}`;
       ul.appendChild(li);
     });
@@ -106,9 +177,9 @@ async function lookupStaff() {
     if (snap.exists()) return renderStaffData(snap.data());
     const snap2 = await getDoc(doc(db,'staffs',raw));
     if (snap2.exists()) return renderStaffData(snap2.data());
-    resultArea.innerHTML = `<div class="text-sm text-red-600">រកមិនឃើញព័ត៌មានសម្រាប់ "${raw}"</div>`;
+    resultArea.innerHTML = `<div class="text-sm text-red-400 glow">រកមិនឃើញព័ត៌មានសម្រាប់ "${raw}"</div>`;
   } catch (err) {
-    resultArea.innerHTML = `<div class="text-sm text-red-600">បរាជ័យក្នុងការស្វែងរក: ${err.message}</div>`;
+    resultArea.innerHTML = `<div class="text-sm text-red-400 glow">បរាជ័យក្នុងការស្វែងរក: ${err.message}</div>`;
   }
 }
 
@@ -123,19 +194,19 @@ function renderStaffData(data) {
   const roles = escapeHtml(data.roles||'');
   const telegram = data.telegramLink || '';
 
-  let html = `<div class="p-4 border rounded bg-white shadow-sm">`;
-  html += `<div class="text-lg font-bold mb-2">ឈ្មោះ: ${name}</div>`;
-  html += `<div class="grid grid-cols-1 gap-1 text-sm mb-2">`;
-  html += `<div>វេន: ${grp||'-'}</div>`;
-  html += `<div>លេខឡានៈ  ${bus||'-'}</div>`;
-  html += `<div>ទីតាំងឡើងឡានៈ ${location||'-'}</div>`;
-  html += `<div>ម៉ោងឡើងឡានៈ 4:30 ព្រឹក</div>`;
-  html += `<div>សណ្ឋាគារៈ ${hotel||'-'}</div>`;
-  html += `<div>លេខបន្ទប់ៈ ${room||'-'}</div>`;
+  let html = `<div class="p-6 border rounded-xl bg-white/10 backdrop-blur-sm shadow-lg chill-card">`;
+  html += `<div class="text-xl font-bold mb-3 glow-teal">${name}</div>`;
+  html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm mb-3">`;
+  html += `<div class="flex items-center"><span class="w-20 font-medium staff-label">វេន:</span> <span class="ml-2">${grp||'-'}</span></div>`;
+  html += `<div class="flex items-center"><span class="w-20 font-medium staff-label">លេខឡានៈ</span> <span class="ml-2">${bus||'-'}</span></div>`;
+  html += `<div class="flex items-center"><span class="w-20 font-medium md:w-auto staff-label">ទីតាំងឡើងឡានៈ</span> <span class="ml-2">${location||'-'}</span></div>`;
+  html += `<div class="flex items-center"><span class="w-20 font-medium md:w-auto staff-label">ម៉ោងឡើងឡានៈ</span> <span class="ml-2">4:30 ព្រឹក</span></div>`;
+  html += `<div class="flex items-center"><span class="w-20 font-medium staff-label">សណ្ឋាគារៈ</span> <span class="ml-2">${hotel||'-'}</span></div>`;
+  html += `<div class="flex items-center"><span class="w-20 font-medium staff-label">លេខបន្ទប់ៈ</span> <span class="ml-2">${room||'-'}</span></div>`;
   html += `</div>`;
-  if (roles) html += `<div class="mb-2"><b>Roles:</b> ${roles}</div>`;
+  if (roles) html += `<div class="mb-3"><b class="glow">Roles:</b> ${roles}</div>`;
   if (telegram) {
-    html += `<div class="mt-2"><a href="${escapeHtml(telegram)}" target="_blank" class="inline-block px-3 py-2 bg-blue-600 text-white rounded">ចុចចូលគ្រុបតេលេក្រាម</a></div>`;
+    html += `<div class="mt-3"><a href="${escapeHtml(telegram)}" target="_blank" class="inline-block px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg neon-button glow">ចុចចូលគ្រុបតេលេក្រាម</a></div>`;
   }
   html += `</div>`;
   resultArea.innerHTML = html;
@@ -150,41 +221,57 @@ document.addEventListener('DOMContentLoaded',()=>{
     clearTimeout(window._staffTimer);
     window._staffTimer=setTimeout(lookupStaff,400);
   });
+
+  // Add waves
+  const waveBg = document.createElement('div');
+  waveBg.className = 'wave-bg';
+  document.body.appendChild(waveBg);
+  const wave1 = document.createElement('div');
+  wave1.className = 'wave1';
+  const wave2 = document.createElement('div');
+  wave2.className = 'wave2';
+  waveBg.appendChild(wave1);
+  waveBg.appendChild(wave2);
 });
 </script>
 </head>
 
-<body class="bg-gradient-to-br from-blue-500 to-blue-300 min-h-screen flex items-center justify-center p-6">
-  <div class="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-6">
-    <h1 class="text-2xl font-extrabold text-blue-600 mb-6 text-center animate-bounce">ដំណើរកំសាន្តគ្រួសារ OML 2025</h1>
-    <h1 class="text-2xl font-extrabold text-blue-600 mb-6 text-center animate-bounce">"កម្លាំងមហាសាគរ"</h1>
+<body class="bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 min-h-screen flex flex-col items-center justify-start pt-8 pb-8 relative overflow-auto">
+  <div class="w-full max-w-2xl mx-auto bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl p-6 md:p-8 border border-white/20">
+    <!-- Logo -->
+    <div class="text-center mb-4 md:mb-6">
+      <img src="https://raw.githubusercontent.com/Azapaindev/luckydraw-participant/refs/heads/main/Poster-Water-logo%20(1)-02.png" alt="One More Logo" class="logo mx-auto max-h-32 md:max-h-48" />
+    </div>
+    
+    <h1 class="text-2xl md:text-3xl font-extrabold text-white mb-2 text-center soft-wave glow">🌊 ដំណើរកំសាន្តគ្រួសារ OML 2025 🏖️</h1>
+    <h2 class="text-xl md:text-2xl font-bold text-blue-200 mb-6 text-center gentle-float">"កម្លាំងមហាសាគរ"</h2>
 
     <!-- Tabs -->
-    <div class="flex mb-4 justify-center space-x-2">
-      <button onclick="showTab('staff')" class="tabBtn bg-blue-600 text-white px-4 py-2 rounded">ព័ត៌មានដំណើរកំសាន្ត</button>
-      <button onclick="showTab('all')" class="tabBtn bg-gray-300 text-gray-700 px-4 py-2 rounded">ព័ត៌មានអ្នកឈ្នះរង្វាន់</button>
+    <div class="flex flex-col sm:flex-row mb-6 justify-center space-y-2 sm:space-y-0 sm:space-x-3">
+      <button onclick="showTab('staff')" class="tabBtn neon-button bg-gradient-to-r from-blue-600 to-blue-500 text-white px-4 py-3 rounded-xl font-bold shadow-lg w-full sm:w-auto">🌴 ព័ត៌មានដំណើរកំសាន្ត</button>
+      <button onclick="showTab('all')" class="tabBtn neon-button bg-white/10 text-white px-4 py-3 rounded-xl font-bold shadow-lg w-full sm:w-auto backdrop-blur-sm">🏆 ព័ត៌មានអ្នកឈ្នះរង្វាន់</button>
     </div>
 
     <!-- Staff Info -->
     <div id="tab-staff">
-      <div class="mb-3">
-        <input id="staffIdInput" type="text" placeholder="បញ្ចូលលេខបុគ្គលិក (ឧ. 000168 ឬ 168)" class="w-full border rounded-lg p-3"/>
+      <div class="mb-6">
+        <input id="staffIdInput" type="text" placeholder="បញ្ចូលលេខបុគ្គលិក (ឧ. 000168 ឬ 168)" class="w-full border-2 border-white/30 rounded-xl p-4 bg-white/5 backdrop-blur-sm text-white placeholder-white/60 neon-input focus:outline-none text-center"/>
       </div>
-      <div id="staffResult"></div>
+      <div id="staffResult" class="max-h-96 overflow-y-auto"></div>
     </div>
 
     <!-- All Tickets -->
-    <div id="tab-all" class="hidden space-y-6">
-      <div class="space-y-3">
-        <input id="participantNumber" type="text" placeholder="បញ្ចូលលេខសន្លឹកឆ្នោត" class="w-full border rounded-lg p-4 text-center"/>
-        <p id="result" class="mt-2 font-bold text-center text-xl"></p>
+    <div id="tab-all" class="hidden space-y-6 md:space-y-8">
+      <div class="space-y-4 text-center">
+        <input id="participantNumber" type="text" placeholder="បញ្ចូលលេខសន្លឹកឆ្នោត" class="w-full border-2 border-white/30 rounded-xl p-4 md:p-5 text-center text-lg md:text-2xl bg-white/5 backdrop-blur-sm text-white placeholder-white/60 neon-input focus:outline-none"/>
+        <p id="result" class="mt-4 font-bold text-center text-xl md:text-2xl"></p>
       </div>
 
-      <div class="max-h-96 overflow-y-auto p-4 border rounded bg-blue-50">
-        <p class="mb-3 text-sm text-blue-700">
-          ខាងក្រោមជាព័ត៌មានអ្នកឈ្នះរង្វាន់ ក្នុងកម្មវិធីដំណើរកំសាន្តគ្រួសារ OML 2025:
+      <div class="overflow-y-auto p-4 md:p-6 border border-white/10 rounded-2xl bg-white/5 backdrop-blur-md">
+        <p class="mb-4 text-sm md:text-base text-white">
+          🌅 ខាងក្រោមជាព័ត៌មានអ្នកឈ្នះរង្វាន់ ក្នុងកម្មវិធីដំណើរកំសាន្តគ្រួសារ OML 2025 🐚
         </p>
-        <ul id="winningList" class="space-y-2"></ul>
+        <ul id="winningList" class="space-y-3 md:space-y-4"></ul>
       </div>
     </div>
   </div>
@@ -195,12 +282,17 @@ function showTab(tab){
   document.getElementById('tab-all').classList.toggle('hidden', tab!=='all');
   
   document.querySelectorAll('.tabBtn').forEach(btn=>{
-    btn.classList.remove('bg-blue-600','text-white');
-    btn.classList.add('bg-gray-300','text-gray-700');
+    btn.classList.remove('bg-gradient-to-r','from-blue-600','to-blue-500');
+    btn.classList.add('bg-white/10');
   });
 
-  if(tab==='staff') document.querySelectorAll('.tabBtn')[0].classList.add('bg-blue-600','text-white');
-  else document.querySelectorAll('.tabBtn')[1].classList.add('bg-blue-600','text-white');
+  if(tab==='staff') {
+    document.querySelectorAll('.tabBtn')[0].classList.add('bg-gradient-to-r','from-blue-600','to-blue-500');
+    document.querySelectorAll('.tabBtn')[0].classList.remove('bg-white/10');
+  } else {
+    document.querySelectorAll('.tabBtn')[1].classList.add('bg-gradient-to-r','from-blue-600','to-blue-500');
+    document.querySelectorAll('.tabBtn')[1].classList.remove('bg-white/10');
+  }
 }
 
 showTab('staff'); // default first tab

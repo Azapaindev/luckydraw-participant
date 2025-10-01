@@ -9,7 +9,7 @@
 <style>
 @keyframes shake {0% {transform: translateX(0);} 25% {transform: translateX(-5px);} 50% {transform: translateX(5px);} 75% {transform: translateX(-5px);} 100% {transform: translateX(0);}}
 .shake {animation: shake 0.5s;}
-.glow {text-shadow: 0 0 8px #f87171, 0 0 12px #f87171;}
+.glow {text-shadow: 0 0 8px #3b82f6, 0 0 12px #3b82f6;} /* blue glow */
 </style>
 
 <script type="module">
@@ -31,7 +31,7 @@ const db = getFirestore(app);
 
 let prizes = [];
 
-// ---------------- Lucky Draw check ----------------
+// ---------------- Lucky Draw ----------------
 onSnapshot(collection(db, 'prizes'), snapshot => {
   prizes = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
   renderWinningList();
@@ -51,8 +51,8 @@ function checkWinner() {
   }
 
   if (found) {
-    resultEl.innerHTML = `<span class='text-green-600 text-2xl font-bold'>🎉 អបអរសាទរ! អ្នកឈ្នះ: <b>${prizeName}</b></span>`;
-    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+    resultEl.innerHTML = `<span class='text-blue-600 text-2xl font-bold'>🎉 អបអរសាទរ! អ្នកឈ្នះ: <b>${prizeName}</b></span>`;
+    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#3b82f6','#60a5fa','#93c5fd'] });
   } else {
     resultEl.innerHTML = `<span class='text-gray-700 text-xl'>មិនមានរង្វាន់ឈ្នះនៅឡើយទេ។</span>`;
     resultEl.classList.add('shake','glow');
@@ -70,14 +70,14 @@ function renderWinningList() {
     const div = document.createElement('div');
     div.className = 'mb-4';
     const h = document.createElement('h3');
-    h.className = 'text-lg font-bold text-purple-600 mb-2';
+    h.className = 'text-lg font-bold text-blue-600 mb-2';
     h.textContent = `រង្វាន់: ${prizeName}`;
     div.appendChild(h);
     const ul = document.createElement('ul');
     ul.className = 'pl-4';
     tickets.forEach(t => {
       const li = document.createElement('li');
-      li.className = 'mb-1 p-1 border rounded bg-gray-50';
+      li.className = 'mb-1 p-1 border rounded bg-blue-50';
       li.textContent = `លេខសន្លឹកឆ្នោត: ${t}`;
       ul.appendChild(li);
     });
@@ -117,22 +117,25 @@ function renderStaffData(data) {
   const name = escapeHtml(data.fullName||'');
   const grp = escapeHtml(data.group||'');
   const bus = escapeHtml(data.bus||'');
+  const location = escapeHtml(data.location||'');
   const hotel = escapeHtml(data.hotel||'');
   const room = escapeHtml(data.roomNumber||'');
   const roles = escapeHtml(data.roles||'');
   const telegram = data.telegramLink || '';
 
   let html = `<div class="p-4 border rounded bg-white shadow-sm">`;
-  html += `<div class="text-lg font-bold mb-2">${name}</div>`;
-  html += `<div class="grid grid-cols-2 gap-2 text-sm mb-2">`;
-  html += `<div><b>Group</b><div>${grp||'-'}</div></div>`;
-  html += `<div><b>Bus</b><div>${bus||'-'}</div></div>`;
-  html += `<div><b>Hotel</b><div>${hotel||'-'}</div></div>`;
-  html += `<div><b>Room</b><div>${room||'-'}</div></div>`;
+  html += `<div class="text-lg font-bold mb-2">ឈ្មោះ: ${name}</div>`;
+  html += `<div class="grid grid-cols-1 gap-1 text-sm mb-2">`;
+  html += `<div>វេន: ${grp||'-'}</div>`;
+  html += `<div>លេខឡានៈ  ${bus||'-'}</div>`;
+  html += `<div>ទីតាំងឡើងឡានៈ ${location||'-'}</div>`;
+  html += `<div>ម៉ោងឡើងឡានៈ 4:30 ព្រឹក</div>`;
+  html += `<div>សណ្ឋាគារៈ ${hotel||'-'}</div>`;
+  html += `<div>លេខបន្ទប់ៈ ${room||'-'}</div>`;
   html += `</div>`;
   if (roles) html += `<div class="mb-2"><b>Roles:</b> ${roles}</div>`;
   if (telegram) {
-    html += `<div class="mt-2"><a href="${escapeHtml(telegram)}" target="_blank" class="inline-block px-3 py-2 bg-blue-600 text-white rounded">Join Telegram Group</a></div>`;
+    html += `<div class="mt-2"><a href="${escapeHtml(telegram)}" target="_blank" class="inline-block px-3 py-2 bg-blue-600 text-white rounded">ចុចចូលគ្រុបតេលេក្រាម</a></div>`;
   }
   html += `</div>`;
   resultArea.innerHTML = html;
@@ -151,51 +154,56 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 </head>
 
-<body class="bg-gradient-to-br from-purple-500 to-pink-500 min-h-screen flex items-center justify-center p-6">
+<body class="bg-gradient-to-br from-blue-500 to-blue-300 min-h-screen flex items-center justify-center p-6">
   <div class="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-6">
-    <h1 class="text-2xl font-extrabold text-purple-600 mb-6 text-center animate-bounce">OML   កម្លាំង មហាសាគរ</h1>
+    <h1 class="text-2xl font-extrabold text-blue-600 mb-6 text-center animate-bounce">ដំណើរកំសាន្តគ្រួសារ OML 2025</h1>
+    <h1 class="text-2xl font-extrabold text-blue-600 mb-6 text-center animate-bounce">"កម្លាំងមហាសាគរ"</h1>
 
     <!-- Tabs -->
     <div class="flex mb-4 justify-center space-x-2">
-      <button onclick="showTab('check')" class="tabBtn bg-purple-600 text-white px-4 py-2 rounded">ពិនិត្យលេខសន្លឹកឆ្នោត</button>
-      <button onclick="showTab('all')" class="tabBtn bg-gray-300 text-gray-700 px-4 py-2 rounded">សន្លឹកឆ្នោតឈ្នះទាំងអស់</button>
-      <button onclick="showTab('staff')" class="tabBtn bg-gray-300 text-gray-700 px-4 py-2 rounded">ស្វែងរក ពត័មានរបស់អ្នក</button>
-    </div>
-
-    <!-- Check Ticket -->
-    <div id="tab-check">
-      <input id="participantNumber" type="text" placeholder="បញ្ចូលលេខសន្លឹកឆ្នោត" class="w-full border rounded-lg p-3 mb-3 text-center"/>
-      <p id="result" class="mt-4 font-bold text-center"></p>
-    </div>
-
-    <!-- All Tickets -->
-    <div id="tab-all" class="hidden">
-      <ul id="winningList" class="max-h-64 overflow-y-auto"></ul>
+      <button onclick="showTab('staff')" class="tabBtn bg-blue-600 text-white px-4 py-2 rounded">ព័ត៌មានដំណើរកំសាន្ត</button>
+      <button onclick="showTab('all')" class="tabBtn bg-gray-300 text-gray-700 px-4 py-2 rounded">ព័ត៌មានអ្នកឈ្នះរង្វាន់</button>
     </div>
 
     <!-- Staff Info -->
-    <div id="tab-staff" class="hidden">
+    <div id="tab-staff">
       <div class="mb-3">
         <input id="staffIdInput" type="text" placeholder="បញ្ចូលលេខបុគ្គលិក (ឧ. 000168 ឬ 168)" class="w-full border rounded-lg p-3"/>
       </div>
       <div id="staffResult"></div>
     </div>
+
+    <!-- All Tickets -->
+    <div id="tab-all" class="hidden space-y-6">
+      <div class="space-y-3">
+        <input id="participantNumber" type="text" placeholder="បញ្ចូលលេខសន្លឹកឆ្នោត" class="w-full border rounded-lg p-4 text-center"/>
+        <p id="result" class="mt-2 font-bold text-center text-xl"></p>
+      </div>
+
+      <div class="max-h-96 overflow-y-auto p-4 border rounded bg-blue-50">
+        <p class="mb-3 text-sm text-blue-700">
+          ខាងក្រោមជាព័ត៌មានអ្នកឈ្នះរង្វាន់ ក្នុងកម្មវិធីដំណើរកំសាន្តគ្រួសារ OML 2025:
+        </p>
+        <ul id="winningList" class="space-y-2"></ul>
+      </div>
+    </div>
   </div>
 
 <script>
 function showTab(tab){
-  document.getElementById('tab-check').classList.toggle('hidden',tab!=='check');
-  document.getElementById('tab-all').classList.toggle('hidden',tab!=='all');
-  document.getElementById('tab-staff').classList.toggle('hidden',tab!=='staff');
+  document.getElementById('tab-staff').classList.toggle('hidden', tab!=='staff');
+  document.getElementById('tab-all').classList.toggle('hidden', tab!=='all');
+  
   document.querySelectorAll('.tabBtn').forEach(btn=>{
-    btn.classList.remove('bg-purple-600','text-white');
+    btn.classList.remove('bg-blue-600','text-white');
     btn.classList.add('bg-gray-300','text-gray-700');
   });
-  if(tab==='check') document.querySelectorAll('.tabBtn')[0].classList.add('bg-purple-600','text-white');
-  else if(tab==='all') document.querySelectorAll('.tabBtn')[1].classList.add('bg-purple-600','text-white');
-  else document.querySelectorAll('.tabBtn')[2].classList.add('bg-purple-600','text-white');
+
+  if(tab==='staff') document.querySelectorAll('.tabBtn')[0].classList.add('bg-blue-600','text-white');
+  else document.querySelectorAll('.tabBtn')[1].classList.add('bg-blue-600','text-white');
 }
-showTab('check');
+
+showTab('staff'); // default first tab
 </script>
 </body>
 </html>

@@ -92,6 +92,7 @@ body {
 }
 .result-nowrap {
   white-space: nowrap;
+}
 /* Fix for backdrop-blur in Safari/iOS */
 .backdrop-blur-sm {
   -webkit-backdrop-filter: blur(4px);
@@ -178,7 +179,7 @@ function renderWinningList() {
     ul.className = 'pl-4 space-y-1';
     tickets.forEach(t => {
       const li = document.createElement('li');
-      li.className = 'mb-1 p-2 border rounded-lg bg-white/20 backdrop-blur-sm border-blue-200 transform-gpu';
+      li.className = 'mb-1 p-2 border rounded-lg bg-blue-100/20 backdrop-blur-sm border-blue-200 transform-gpu';
       li.textContent = `លេខសន្លឹកឆ្នោត: ${t}`;
       ul.appendChild(li);
     });
@@ -225,8 +226,8 @@ function renderStaffData(data) {
   const lucky=escapeHtml(data.luckyDraw||'');
   const telegram = data.telegramLink || '';
 
-let html = `<div class="p-6 border rounded-xl bg-white/10 backdrop-blur-sm shadow-lg chill-card text-white transform-gpu">`;
-html += `<div class="text-xl font-bold mb-3 transform-gpu">ឈ្មោះ: ${name}</div>`;
+let html = `<div class="p-6 border rounded-xl bg-blue-100/10 backdrop-blur-sm shadow-lg chill-card text-white transform-gpu">`;
+html += `<div class="text-xl font-bold mb-3 glow-teal transform-gpu">ឈ្មោះ: ${name}</div>`;
 html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm mb-3">`;
 html += `<div class="flex items-center transform-gpu"><span class="w-20 font-medium staff-label">វេន:</span> <span class="ml-2">${grp||'-'}</span></div>`;
 html += `<div class="flex items-center transform-gpu"><span class="w-20 font-medium staff-label">លេខឡានៈ</span> <span class="ml-2">${bus||'-'}</span></div>`;
@@ -269,7 +270,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 </head>
 
   <body class="bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 min-h-screen transform-gpu flex flex-col items-center justify-start pt-8 pb-8 relative overflow-auto">
-  <div class="w-full max-w-2xl mx-auto bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl p-6 md:p-8 border border-white/20 transform-gpu">
+  <div class="w-full max-w-2xl mx-auto bg-blue-100/10 backdrop-blur-xl rounded-3xl shadow-2xl p-6 md:p-8 border border-white/20 transform-gpu">
     <!-- Logo -->
     <div class="text-center mb-4 md:mb-6 transform-gpu">
       <img src="https://raw.githubusercontent.com/Azapaindev/luckydraw-participant/refs/heads/main/Poster-Water-logo%20(1)-02.png" alt="One More Logo" class="logo mx-auto max-h-32 md:max-h-48 transform-gpu" />
@@ -287,13 +288,13 @@ document.addEventListener('DOMContentLoaded',()=>{
     <!-- Tabs -->
     <div class="flex flex-col sm:flex-row mb-6 justify-center space-y-2 sm:space-y-0 sm:space-x-3 transform-gpu">
       <button onclick="showTab('staff')" class="tabBtn neon-button bg-gradient-to-r from-blue-600 to-blue-500 text-white px-4 py-3 rounded-xl font-bold shadow-lg w-full sm:w-auto transform-gpu">🌴 ព័ត៌មានដំណើរកំសាន្ត</button>
-      <button onclick="showTab('all')" class="tabBtn neon-button bg-white/10 text-white px-4 py-3 rounded-xl font-bold shadow-lg w-full sm:w-auto backdrop-blur-sm transform-gpu">🏆 ព័ត៌មានអ្នកឈ្នះរង្វាន់</button>
+      <button onclick="showTab('all')" class="tabBtn neon-button bg-blue-100/10 text-white px-4 py-3 rounded-xl font-bold shadow-lg w-full sm:w-auto backdrop-blur-sm transform-gpu">🏆 ព័ត៌មានអ្នកឈ្នះរង្វាន់</button>
     </div>
 
     <!-- Staff Info -->
     <div id="tab-staff">
       <div class="mb-6 transform-gpu">
-        <input id="staffIdInput" type="text" placeholder="បញ្ចូលលេខបុគ្គលិក (ឧ. 000168 ឬ 168)" class="w-full border-2 border-white/30 rounded-xl p-4 bg-white/5 backdrop-blur-sm text-white placeholder-white/60 neon-input focus:outline-none text-center transform-gpu"/>
+        <input id="staffIdInput" type="text" placeholder="បញ្ចូលលេខបុគ្គលិក (ឧ. 000168 ឬ 168)" class="w-full border-2 border-white/30 rounded-xl p-4 bg-blue-100/5 backdrop-blur-sm text-white placeholder-white/60 neon-input focus:outline-none text-center transform-gpu"/>
       </div>
       <div id="staffResult" class="max-h-96 overflow-y-auto transform-gpu"></div>
     </div>
@@ -301,11 +302,11 @@ document.addEventListener('DOMContentLoaded',()=>{
     <!-- All Tickets -->
     <div id="tab-all" class="hidden space-y-6 md:space-y-8 transform-gpu">
       <div class="space-y-4 text-center transform-gpu">
-        <input id="participantNumber" type="text" placeholder="បញ្ចូលលេខសន្លឹកឆ្នោត" class="w-full border-2 border-white/30 rounded-xl p-4 md:p-5 text-center text-lg md:text-2xl bg-white/5 backdrop-blur-sm text-white placeholder-white/60 neon-input focus:outline-none transform-gpu"/>
+        <input id="participantNumber" type="text" placeholder="បញ្ចូលលេខសន្លឹកឆ្នោត" class="w-full border-2 border-white/30 rounded-xl p-4 md:p-5 text-center text-lg md:text-2xl bg-blue-100/5 backdrop-blur-sm text-white placeholder-white/60 neon-input focus:outline-none transform-gpu"/>
         <p id="result" class="mt-4 font-bold text-center text-xl md:text-2xl transform-gpu"><span class="result-nowrap"></span></p>
       </div>
 
-      <div class="overflow-y-auto p-4 md:p-6 border border-white/10 rounded-2xl bg-white/5 backdrop-blur-md transform-gpu">
+      <div class="overflow-y-auto p-4 md:p-6 border border-white/10 rounded-2xl bg-blue-100/5 backdrop-blur-md transform-gpu">
         <p class="mb-4 text-sm md:text-base text-white transform-gpu">
           ខាងក្រោមជាព័ត៌មានអ្នកឈ្នះរង្វាន់ ក្នុងកម្មវិធីដំណើរកំសាន្តគ្រួសារ វ័ន ម៉រ លីមីតធីត 2025
         </p>
@@ -321,15 +322,15 @@ function showTab(tab){
   
   document.querySelectorAll('.tabBtn').forEach(btn=>{
     btn.classList.remove('bg-gradient-to-r','from-blue-600','to-blue-500');
-    btn.classList.add('bg-white/10');
+    btn.classList.add('bg-blue-100/10');
   });
 
   if(tab==='staff') {
     document.querySelectorAll('.tabBtn')[0].classList.add('bg-gradient-to-r','from-blue-600','to-blue-500');
-    document.querySelectorAll('.tabBtn')[0].classList.remove('bg-white/10');
+    document.querySelectorAll('.tabBtn')[0].classList.remove('bg-blue-100/10');
   } else {
     document.querySelectorAll('.tabBtn')[1].classList.add('bg-gradient-to-r','from-blue-600','to-blue-500');
-    document.querySelectorAll('.tabBtn')[1].classList.remove('bg-white/10');
+    document.querySelectorAll('.tabBtn')[1].classList.remove('bg-blue-100/10');
   }
 }
 

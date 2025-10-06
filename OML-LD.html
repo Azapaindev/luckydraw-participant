@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Lucky Draw Participant</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@100..900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto Sans Khmer:wght@100..900&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <style>
@@ -92,6 +92,19 @@ body {
 }
 .result-nowrap {
   white-space: nowrap;
+/* Fix for backdrop-blur in Safari/iOS */
+.backdrop-blur-sm {
+  -webkit-backdrop-filter: blur(4px);
+}
+.backdrop-blur-md {
+  -webkit-backdrop-filter: blur(12px);
+}
+.backdrop-blur-xl {
+  -webkit-backdrop-filter: blur(24px);
+}
+.transform-gpu {
+  transform: translate3d(0,0,0);
+}
 }
 @media (max-width: 768px) {
   .wave-bg { height: 30%; }
@@ -324,4 +337,3 @@ showTab('staff'); // default first tab
 </script>
 </body>
 </html>
-

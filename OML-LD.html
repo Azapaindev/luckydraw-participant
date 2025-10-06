@@ -213,7 +213,7 @@ function renderStaffData(data) {
   const telegram = data.telegramLink || '';
 
 let html = `<div class="p-6 border rounded-xl bg-white/10 backdrop-blur-sm shadow-lg chill-card text-white transform-gpu">`;
-html += `<div class="text-xl font-bold mb-3 glow-teal transform-gpu">ឈ្មោះ: ${name}</div>`;
+html += `<div class="text-xl font-bold mb-3 transform-gpu">ឈ្មោះ: ${name}</div>`;
 html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm mb-3">`;
 html += `<div class="flex items-center transform-gpu"><span class="w-20 font-medium staff-label">វេន:</span> <span class="ml-2">${grp||'-'}</span></div>`;
 html += `<div class="flex items-center transform-gpu"><span class="w-20 font-medium staff-label">លេខឡានៈ</span> <span class="ml-2">${bus||'-'}</span></div>`;
@@ -324,3 +324,4 @@ showTab('staff'); // default first tab
 </script>
 </body>
 </html>
+

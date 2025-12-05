@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="color-scheme" content="dark">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mission App – SE-WOS</title>
+
+<!-- Libraries for export -->
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.3.0/dist/exceljs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+
+<style>
+  :root{
+    /* Palette inspired by your logo */
+    --navy:#0f172a;
+    --panel:#0b1220;
+    --card:#0f172a;              /* dark base */
+    --ink:#0a0f1a;
+    --text:#e6edf3;
+    --muted:#94a3b8;
+    --border:#233043;
+
+    --primary:#e11d48;           /* logo red */
+    --secondary:#2563eb;         /* logo blue */
+    --accent-grad: linear-gradient(135deg, var(--primary), var(--secondary));
+    --ghost:#1f2937;
+    --danger:#ef4444;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--navy);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto}
+  a{color:inherit}
+
+  /* Header with logo */
+  .topbar{
+    position:sticky; top:0; z-index:20;
+    background:linear-gradient(180deg, #0b1326 0%, #0d1831 100%);
+    border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:12px; padding:10px 14px;
+  }
+  .brand{
+    display:flex; align-items:center; gap:12px;
+  }
+  .brand img{
+    height:34px; width:auto; background:#fff; border-radius:8px; padding:6px;
+  }
+  .brand .title{
+    font-weight:800; letter-spacing:0.2px;
+  }
+  .brand .subtitle{
+    font-size:12px; color:var(--muted); margin-top:-2px;
+  }
+
+  /* Tabs */
+  .tabs{display:flex;border-bottom:1px solid var(--border);background:transparent}
+  .tab{flex:1;text-align:center;padding:12px;cursor:pointer;background:transparent; color:var(--muted)}
+  .tab.active{color:#fff; font-weight:700; border-bottom:2px solid var(--secondary)}
+
+  .page{display:none;padding:16px}
+  .page.active{display:block}
+
+  /* Inputs */
+  input,select,textarea{
+    width:100%; padding:12px 12px; margin-top:6px;
+    background:var(--ink); border:1px solid var(--border);
+    border-radius:12px; color:var(--text); outline:none;
+  }
+  input:focus,select:focus,textarea:focus{ border-color:var(--secondary) }
+
+  textarea{min-height:92px}
+
+  button{
+    padding:12px 14px; border-radius:12px; border:0; cursor:pointer;
+    color:#00101a; font-weight:800;
+    background:var(--accent-grad);
+  }
+  .ghost{ background:var(--ghost); color:#e5e7eb; border:1px solid var(--border) }
+  .danger{ background:linear-gradient(135deg, var(--danger), #f59e0b); color:#1a0a00 }
+
+  .row{ display:grid; grid-template-columns:1fr; gap:14px }
+  @media(min-width:640px){ .row{ grid-template-columns:repeat(2,1fr) } }
+
+  .hint{ font-size:12px; color:var(--muted) }
+  .spinner{ display:inline-block; width:16px; height:16px; border:2px solid var(--muted); border-top-color:transparent; border-radius:50%; animation:spin .8s linear infinite; margin-left:8px }
+  @keyframes spin{ to{ transform:rotate(360deg) } }
+
+  /* Cards (Instagram-ish) */
+  .cards{ display:grid; gap:16px }
+  .card{
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border:1px solid var(--border);
+    border-radius:18px; padding:14px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+  }
+  .hdr{ display:flex; gap:12px; align-items:center }
+  .ava{ width:42px; height:42px; border-radius:50%; background: radial-gradient(#334155, #1e293b) }
+  .usr{ font-weight:800 }
+  .time{ font-size:12px; color:var(--muted) }
+  .photo{ width:100%; max-height:420px; object-fit:cover; border-radius:14px; margin:12px 0 }
+  .actions{ display:flex; gap:10px; flex-wrap:wrap; margin-top:8px }
+  .cta{ background:var(--accent-grad); color:#00101a; border:0 }
+</style>
+<style>
+/* === Theme: Modern White & Gold === */
+:root{
+  --bg: #ffffff;
+  --surface: #fafafa;
+  --text: #1a1a1a;
+  --muted: #666666;
+  --primary: #C9A227; /* gold */
+  --primary-contrast: #1a1a1a;
+  --border: #e8e8e8;
+  --accent: #E6C249; /* lighter gold */
+  --shadow: 0 6px 20px rgba(0,0,0,0.08);
+}
+body{ background: var(--bg); color: var(--text); }
+.header, header, .topbar{ background: var(--bg); border-bottom: 1px solid var(--border); }
+.card, .panel, .box{ background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); border-radius: 14px; }
+button, .btn, input[type=button], input[type=submit]{
+  background: var(--primary);
+  color: var(--bg);
+  border: none;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+}
+button:hover, .btn:hover{ filter: brightness(0.95); }
+select, input, textarea{
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+label{ color: var(--muted); font-weight: 600; }
+a{ color: var(--primary); }
+.badge, .pill{ background: var(--accent); color: var(--primary-contrast); }
+</style>
+<style>
+/* === Theme: Modern Dark + Gold === */
+:root{
+  color-scheme: dark;
+  --bg: #0b0f14;
+  --surface: #11161c;
+  --text: #e8e8e8;
+  --muted: #9aa4b2;
+  --primary: #C9A227; /* gold */
+  --primary-contrast: #0b0f14;
+  --border: #1f2730;
+  --accent: #E6C249; /* lighter gold */
+  --shadow: 0 8px 28px rgba(0,0,0,0.35);
+}
+html, body{ background: var(--bg); color: var(--text); }
+.header, header, .topbar{ background: var(--surface); border-bottom: 1px solid var(--border); }
+.card, .panel, .box{ background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); border-radius: 14px; }
+button, .btn, input[type=button], input[type=submit]{
+  background: var(--primary);
+  color: var(--primary-contrast);
+  border: none;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+}
+button:hover, .btn:hover{ filter: brightness(1.05); }
+select, input, textarea{
+  background: #0f141a;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+select option{ background: #0f141a; color: var(--text); }
+label{ color: var(--muted); font-weight: 600; }
+a{ color: var(--accent); }
+.badge, .pill{ background: var(--accent); color: var(--primary-contrast); }
+::-webkit-scrollbar{ width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb{ background: #243142; border-radius: 8px; }
+</style>
+</head>
+
+<body>
+  <!-- Header with logo -->
+  <div class="topbar">
+    <div class="brand">
+      <img src="https://www.onefraternity.com.kh/wp-content/uploads/2021/07/OFL-Main-Logo.svg" alt="OFL Logo" />
+      <div>
+        <div class="title">SE-WOS Mission</div>
+        <div class="subtitle">Fast field missions • Photos • GPS • Exports</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-page="formPage">Mission Form</div>
+    <div class="tab" data-page="recordsPage">Records</div>
+  </div>
+
+  <!-- PAGE: FORM -->
+  <div id="formPage" class="page active">
+    <button id="dummyBtn" class="ghost" style="width:100%;margin-bottom:12px">Load Dummy</button>
+
+    <label>Date <span class="hint">(required)</span></label>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input type="date" id="date" required />
+      <button type="button" id="todayBtn" class="ghost">Today</button>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Sales ID <span class="hint">(required)</span></label>
+        <input id="salesId" placeholder="Type your ID" required />
+      </div>
+      <div>
+        <label>Mission Working Day <span class="hint">(required)</span></label>
+        <input type="number" id="workingDay" min="1" placeholder="1" required />
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>From</label>
+        <select id="fromType" required>
+          <option value="Base">Base Location</option>
+          <option value="Other">Other</option>
+        </select>
+        <input id="fromOther" placeholder="Enter location" style="display:none;margin-top:6px" / required>
+      </div>
+      <div>
+        <label>Return to Base</label>
+        <select id="returnBase" required><option>Yes</option><option>No</option></select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Start Time <span class="hint">(required)</span></label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="time" id="startTime" required />
+          <button type="button" id="startNowBtn" class="ghost">Now</button>
+        </div>
+      </div>
+      <div>
+        <label>End Time <span class="hint">(required)</span></label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="time" id="endTime" required />
+          <button type="button" id="endNowBtn" class="ghost">Now</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Province *</label>
+        <select id="province" required required>
+          <option value="">Select Province</option>
+          <option>Phnom Penh</option>
+          <option>Kampong Cham</option>
+          <option>Siem Reap</option>
+        </select>
+      </div>
+      <div>
+        <label>District *</label>
+        <select id="district" required required>
+          <option value="">Select District</option>
+          <option>Dangkor</option>
+          <option>Mean Chey</option>
+          <option>Siem Reap</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Commune *</label>
+        <select id="commune" required required><option value="">Select Commune</option></select>
+      </div>
+      <div>
+        <label>Objective / Activities <span class="hint">(required)</span></label>
+        <input id="note" placeholder="Visit outlet / activities" required />
+      </div>
+    </div>
+
+    <label>Photo (optional)</label>
+    <input type="file" id="photo" accept="image/*" capture="environment" />
+    <div id="loadStatus" class="hint"></div>
+
+    <label>GPS</label>
+    <button id="locBtn" class="ghost">📍 Capture GPS</button><span id="gpsSpin"></span>
+    <div id="locStatus" class="hint">Not captured</div>
+
+    <button id="saveBtn" style="width:100%;margin-top:12px" class="cta">Save</button>
+  </div>
+
+  <!-- PAGE: RECORDS -->
+  <div id="recordsPage" class="page">
+    <div class="actions" style="margin-bottom:12px">
+      <button id="downloadExcel" class="ghost">Download Excel (.xlsx)</button>
+      
+      <button id="clearData" class="danger">Clear My Data</button>
+    </div>
+    <div id="recordsList" class="cards"></div>
+  </div>
+
+  <!-- === Option 1: spoofer.js silencer (run this BEFORE the app script) === -->
+  <script>
+  (function(){
+    const isSpoofer = v => typeof v === 'string' && v.indexOf('spoofer.js') !== -1;
+    const oErr = console.error, oWarn = console.warn;
+    console.error = function(...a){ if(a.some(x=>isSpoofer(String(x)))) return; oErr.apply(console,a); };
+    console.warn  = function(...a){ if(a.some(x=>isSpoofer(String(x)))) return; oWarn.apply(console,a); };
+    window.addEventListener('error', e=>{ if(isSpoofer(e?.filename)||isSpoofer(e?.message)){ e.preventDefault(); e.stopImmediatePropagation(); }}, true);
+    window.addEventListener('unhandledrejection', e=>{ const msg=String(e?.reason||''); if(isSpoofer(msg)){ e.preventDefault(); e.stopImmediatePropagation(); }}, true);
+  })();
+  </script>
+
+  
+  <!-- Offline Cambodia admin data embedded -->
+  <script id="kh-geo" type="application/json">{"Banteay Meanchey":{"Malai":["Boeng Beng","Malai","Ou Sampoar","Ou Sralau","Ta Kong","Tuol Pongro"],"Mongkol Borei":["Banteay Neang","Bat Trang","Chamnaom","Kouk Ballangk","Koy Maeng","Ou Prasat","Phnum Touch","Rohat Tuek","Ruessei Kraok","Sambuor","Soea","Srah Reang","Ta Lam"],"Ou Chrov":["Changha","Koub","Kuttasat","Ou Beichoan","Samraong","Soengh","Souphi"],"Paoy Paet":["Nimitt","Paoy Paet","Phsar Kandal"],"Phnum Srok":["Nam Tau","Phnum Dei","Ponley","Poy Char","Spean Sraeng","Srah Chik"],"Preah Netr Preah":["Bos Sbov","Chnuor Mean Chey","Chob Vari","Phnum Lieb","Prasat","Preak Netr Preah","Rohal","Tean Kam","Tuek Chour"],"Serei Saophoan":["Kampong Svay","Kaoh Pong Satv","Mkak","Ou Ambel","Phniet","Preah Ponlea","Tuek Thla"],"Svay Chek":["Phkoam","Roluos","Sarongk","Sla Kram","Svay Chek","Ta Baen","Ta Phou","Treas"],"Thma Puok":["Banteay Chhmar","Kouk Kakthen","Kouk Romiet","Kumru","Phum Thmei","Thma Puok"]},"Battambang":{"Aek Phnum":["Kaoh Chiveang","Peam Aek","Preaek Khpob","Preaek Luong","Preaek Norint","Prey Chas","Samraong Knong"],"Banan":["Bay Damram","Chaeng Mean Chey","Chheu Teal","Kantueu Muoy","Kantueu Pir","Phnum Sampov","Snoeng","Ta Kream"],"Battambang":["Chomkar Somraong","Kdol Doun Teav","OMal","Ou Char","Prek Preah Sdach","Rottanak","Sla Ket","Svay Por","Tuol Ta Ek","wat Kor"],"Bavel":["Ampil Pram Daeum","Bavel","Boeung Pram","Kdol Ta Haen","Khlaeng Meas","Khnach Romeas","Lvea","Prey Khpos"],"Kamrieng":["Boeng Reang","Kamrieng","Ou Da","Ta Krei","Ta Saen","Trang"],"Koas Krala":["Chhnal Moan","Doun Ba","Hab","Kaos Krala","Preah Phos","Thipakdei"],"Moung Ruessei":["Chrey","Kakaoh","Kear","Moung","Prey Svay","Prey Touch","Robas Mongkol","Ruessei Krang","Ta Loas"],"Phnum Proek":["Barang Thleak","Bour","Ou Rumduol","Pech Chenda","Phnum Proek"],"Rotonak Mondol":["Andaeuk Haeb","Phlov Meas","Reaksmei Songha","Sdau","Traeng"],"Rukh Kiri":["Basak","Mukh Reah","Preaek Chik","Prey Tralach","Sdok Pravoek"],"Samlout":["Kampong Lpov","Mean Chey","Ou Samril","Samlout","Sung","Ta Sanh","Ta Taok"],"Sampov Lun":["Angkor Ban","Chrey Seima","Sampov Lun","Santepheap","Serei Mean Chey","Ta Sda"],"Sangkae":["Anlong Vil","Kampong Preah","Kampong Prieng","Norea","Ou Dambang Muoy","Ou Dambang Pir","Reang Kesei","Roka","Ta Pon","Vaot Ta Muem"],"Thma Koul":["Anlong Run","Bansay Traeng","Boeng Pring","Chrey","Chrouy Sdau","Kouk Khmum","Ou Ta Ki","Rung Chrey","Ta Meun","Ta Pung"]},"Kampong Cham":{"Batheay":["Batheay","Chbar Ampov","Chealea","Cheung Prey","Me Pring","Ph'av","Sambour","Sandaek","Tang Krang","Tang Krasang","Trab","Tumnob"],"Chamkar Leu":["Bos Khnor","Chamkar Andoung","Cheyyou","Lvea Leu","Spueu","Svay Teab","Ta Ong","Ta Prok"],"Cheung Prey":["Khnor Dambang","Kouk Rovieng","Pdau Chum","Prey Char","Pring Chrum","Sampong Chey","Sdaeung Chey","Soutib","Sramar","Trapeang Kor"],"Kampong Cham":["Boeng Kok","Kampong Cham","Sambuor Meas","Veal Vong"],"Kampong Siem":["Ampil","Hanchey","Kaoh Mitt","Kaoh Roka","Kaoh Samraong","Kaoh Tontuem","Kien Chrey","Kokor","Krala","Ou Svay","Ro'ang","Rumchek","Srak","Trean","Vihear Thum"],"Kang Meas":["Angkor Ban","Kang Ta Noeng","Khchau","Peam Chi Kang","Preaek Koy","Preaek Krabau","Reay Pay","Roka Ar","Roka Koy","Sdau","Sour Kong"],"Kaoh Soutin":["Kampong Reab","Kaoh Sotin","Lve","Moha Khnhoung","Moha Leaph","Peam Prathnuoh","Pongro","Preaek Ta Nong"],"Prey Chhor":["Baray","Boeng Nay","Chrey Vien","Khvet Thum","Kor","Krouch","Lvea","Mien","Prey Chhor","Samraong","Sour Saen","Sragnae","Thma Pun","Tong Rong","Trapeang Preah"],"Srei Santhor":["Baray","Chi Bal","Kaoh Andaet","Khnar Sa","Mean Chey","Phteah Kandal","Pram Yam","Preaek Dambouk","Preaek Pou","Preaek Rumdeng","Ruessei Srok","Svay Khsach Phnum","Svay Pou","Tong Tralach"],"Stueng Trang":["Areaks Tnot","Dang Kdar","Khpob Ta Nguon","Me Sar Chrey","Ou Mlu","Peam Kaoh Snar","Preaek Bak","Preah Andoung","Preak Kak","Soupheas","Tuol Preah Khleang","Tuol Sambuor"]},"Kampong Chhnang":{"Baribour":["Anhchanh Rung","Chak","Chhnok Tru","Kampong Preah Kokir","Khon Rang","Melum","Pech Changvar","Phsar","Ponley","Popel","Trapeang Chan"],"Chol Kiri":["Chol Sar","Kampong Ous","Kaoh Thkov","Peam Chhkaok","Prey Kri"],"Kampong Chhnang":["B'er","Kampong Chhnang","Khsam","Phsar Chhnang"],"Kampong Leaeng":["Chranouk","Dar","Kampong Hau","Phlov Tuk","Pou","Pralay Meas","Samraong Saen","Svay Rumpear","Trangel"],"Kampong Tralach":["Ampil Tuek","Chhuk Sa","Chres","Kampong Tralach","Longveaek","Ou Ruessei","Peani","Saeb","Ta Ches","Thma Edth"],"Rolea B'ier":["Andoung Snay","Banteay Preal","Cheung Kreav","Chrey Bak","Kouk Banteay","Krang Leav","Pongro","Prasnoeb","Prey Mul","Rolea B'ier","Srae Thmei","Svay Chrum","Tuek Hout"],"Sameakki Mean Chey":["Chhean Laeung","Khnar Chhmar","Krang Lvea","Peam","Sedthei","Svay","Svay Chuk","Tbaeng Khpos","Thlok Vien"],"Tuek Phos":["Akphivoadth","Chaong Maong","Chieb","Kbal Tuek","Kdol Saen Chey","Khlong Popok","Krang Skear","Tang Krasang","Tuol Khpos"]},"Kampong Thom":{"Baray":["Bak Sna","Ballangk","Baray","Boeng","Chaeung Daeung","Chhuk Khsach","Chong Doung","Kokir Thum","Krava","Tnaot Chum"],"Kampong Svay":["Chey","Damrei Slab","Kampong Kou","Kampong Svay","Kdei Doung","Nipech","Phat Sanday","Prey Kuy","San Kor","Tbaeng","Trapeang Ruessei"],"Prasat Ballangk":["Doung","Kraya","Phan Nheum","Sakream","Sala Visai","Sameakki","Tuol Kreul"],"Prasat Sambour":["Chhuk","Koul","Sambour","Sraeung","Tang Krasau"],"Sandan":["Chheu Teal","Dang Kambet","Klaeng","Mean Chey","Mean Rith","Ngan","Sandan","Sochet","Tum Ring"],"Santuk":["Boeng Lvea","Chroab","Kakaoh","Kampong Thma","Kraya","Pnov","Prasat","Tang Krasang","Tboung Krapeu","Ti Pou"],"Stoung":["Banteay Stoung","Chamna Kraom","Chamna Leu","Kampong Chen Cheung","Kampong Chen Tboung","Msa Krang","Peam Bang","Popok","Pralay","Preah Damrei","Rung Roeang","Samprouch","Trea"],"Stueng Saen":["Achar Leak","Damrei Choan Khla","Kampong Krabau","Kampong Roteh","Kampong Thum","Ou Kanthor","Prey Ta Hu","Srayov"],"Taing Kouk":["Andoung Pou","Chraneang","Chrolong","Pongro","Sou Young","Sralau","Svay Phleung","Triel"]},"Kampot":{"Angkor Chey":["Angk Phnum Touch","Ankor Chey","Champei","Daeum Doung","Dambouk Khpos","Dan Koum","Mroum","Phnum Kong","Praphnum","Samlanh","Tani"],"Banteay Meas":["Banteay Meas Khang Kaeut","Banteay Meas Khang lech","Prey Tonle","Samraong Kraom","Samraong Leu","Sdach Kong Khang Cheung","Sdach Kong Khang lech","Sdach Kong Khang Tboung","Tnoat Chong Srang","Trapeang Sala Khang Kaeut","Trapeang Sala Khang Lech","Tuk Meas Khang Kaeut","Tuk Meas Khang Lech","Voat Angk Khang Cheung","Voat Angk Khang Tboung"],"Chhuk":["Baniev","Boeng Nimol","Chhuk","Dechou Akphivoadth","Doun Yay","Krang Sbov","Krang Snay","Lbaeuk","Mean Chey","Neareay","Satv Pong","Takaen","Tramaeng","Trapeang Bei","Trapeang Phleang"],"Chum Kiri":["Chres","Chumpu Voan","Snay Anhchit","Srae Chaeng","Srae Knong","Srae Samraong","Trapeang Reang"],"Dang Tong":["Angk  Romeas","Damnak Sokram","Dang Tong","Khcheay Khang Cheung","Khcheay Khang Tboung","L'ang","Mean Ritth","Srae Chea Khang Cheung","Srae Chea Khang Tboung","Totung"],"Kampong Trach":["Ang Sophy","Boeng Sala Khang Cheung","Boeng Sala Khang Tboung","Damnak Kantuot Khang Cheung","Damnak Kantuot Khang Tboung","Kampong Trach Khang Kaeut","Kampong Trach Khang Lech","Phnom Prasat","Prasat Phnom Khyang","Preaek Kroes","Ruessei Srok Khang Kaeut","Ruessei Srok Khang Lech","Svay Tong Khang Cheung","Svay Tong Khang Tboung"],"Kampot":["Andoung Khmer","Kampong Bay","Kampong Kandal","Krang Ampil","Traeuy Kaoh"],"Tuek Chhou":["Chum Kriel","Kampong Kraeng","Kampong Samraong","Kandaol","Koun Satv","Makprang","Prey Khmum","Prey Thnang","Stueng Kaev","Thmei","Trapeang Pring","Trapeang Sangkae","Trapeang Thum"],"Bokor":["Boeng Tuk","Kaoh Touch","Preaek Tnoat"]},"Kep":{"Damnak Chang'aeur":["Angkaol","Pong Tuek"],"Kaeb":["Kaeb","Ou Krasar","Prey Thum"]},"Koh Kong":{"Botum Sakor":["Andoung Tuek","Kandaol","Ta Noun","Thma Sa"],"Kaoh Kong":["Chrouy Pras","Kaoh Kapi","Ta Tai Kraom","Trapeang Rung"],"Khemara Phoumin":["Dang Tong","Smach Mean Chey","Stueng Veaeng"],"Kiri Sakor":["Kaoh Sdach","Phnhi Meas","Preaek Khsach"],"Mondol Seima":["Pak Khlang","Peam Krasaob","Tuol Kokir"],"Srae Ambel":["Boeng Preav","Chi Kha Kraom","Chi kha Leu","Chrouy Svay","Dang Peaeng","Srae Ambel"],"Thma Bang":["Chi Phat","Chumnoab","Pralay","Ruessei Chrum","Ta Tey Leu","Thma Doun Pov"]},"Kratie":{"Chetr Borei":["Bos Leav","Changkrang","Dar","Kantuot","Kaoh Chraeng","Kou Loab","Sambok","Thma Andaeuk","Thma Kreae","Thmei"],"Chhloung":["Chhloung","Damrei Phong","Han Chey","Kampong Damrei","Kanhchor","Khsach Andeth","Pongro","Preaek Saman"],"Kracheh":["Kaoh Trong","Kracheh","Krakor","Ou Ruessei","Roka Kandal"],"Prek Prasab":["Chambâk","Chrouy Banteay","Kampong Kor","Koh Ta Suy","Preaek Prasab","Russey Keo","Saob","Ta Mao"],"Sambour":["Boeng Char","Kampong Cham","Kaoh Khnhaer","Kbal Damrei","Ou Krieng","Roluos Mean Chey","Sambour","Sandan","Srae Chis","Voadthonak"],"Snuol":["Khsuem","Kronhoung Saen Chey","Pir Thnu","Snuol","Srae Char","Svay Chreah"]},"Mondul Kiri":{"Kaev Seima":["Chong Phlah","Memang","Srae Chhuk","Srae Khtum","Srae Preah"],"Kaoh Nheaek":["A Buon Leu","Nang Khi Lik","Roya","Sokh Sant","Srae Huy","Srae Sangkum"],"Ou Reang":["Dak Dam","Saen Monourom"],"Pech Chreada":["Bu Sra","Krang Teh","Pu Chrey","Srae Ampum"],"Saen Monourom":["Monourom","Romonea","Sokh Dom","Spean Mean Chey"]},"Oddar Meanchey":{"Anlong Veaeng":["Anlong Veaeng","Lumtong","Thlat","Trapeang Prei","Trapeang Tav"],"Banteay Ampil":["Ampil","Beng","Kouk Khpos","Kouk Mon"],"Chong Kal":["Cheung Tien","Chong Kal","Krasang","Pongro"],"Samraong":["Bansay Reak","Bos Sbov","Koun Kriel","Ou Smach","Samraong"],"Trapeang Prasat":["Bak Anloung","Ou Svay","Ph'av","Preah Pralay","Trapeang Prasat","Tumnob Dach"]},"Pailin":{"Pailin":["Bar Yakha","Ou Ta Vau","Pailin","Tuol Lvea"],"Sala Krau":["Ou Andoung","Sala Krau","Stueng Kach","Stueng Trang"]},"Preah Sihanouk":{"Kampong Seila":["Chamkar Luong","Kampong Seila","Ou Bak Roteh","Stueng Chhay"],"Kaoh Rung":["Kaoh Rung","Koah Rung Sonlem"],"Preah Sihanouk":["Bei","Buon","lek Muoy","Pir"],"Prey Nob":["Andoung Thma","Bet Trang","Boeng Ta Prum","Cheung Kou","Ou Chrov","Ou Oknha Heng","Prey Nob","Ream","Sameakki","Samrong","Ta Ney","Tuek L'ak","Tuek Thla","Tuol Totueng","Veal Renh"],"Stueng Hav":["Kaev Phos","Kampenh","Ou Treh","Tumnob Rolok"]},"Preah Vihear":{"Chey Saen":["Chrach","Khyang","Putrea","S'ang","Tasu","Thmea"],"Chhaeb":["Chhaeb Muoy","Chhaeb Pir","Kampong Sralau Muoy","Kampong Sralau Pir","Mlu Prey Muoy","Mlu Prey Pir","Sangkae Muoy","Sangkae Pir"],"Choam Ksant":["Choam Ksant","Kantuot","Morokot","Pring Thum","Rumdaoh Srae","Sror Aem","Tuek Kraham","Yeang"],"Kuleaen":["Kuleaen Cheung","Kuleaen Tboung","Phnum Penh","Phnum Tbaeng Pir","Srayang","Thmei"],"Preah Vihear":["Kampong Pranak","Pal Hal"],"Rovieng":["Reaksa","Reaksmei","Rieb Roy","Rik Reay","Robieb","Rohas","Romoneiy","Romtum","Rotanak","Rumdaoh","Rung Roeang","Ruos Roan"],"Sangkum Thmei":["Chamraeun","Phnum Tbaeng Muoy","Ro'ang","Ronak Ser","Sdau"],"Tbaeng Mean Chey":["Chhean Mukh","Pou","Prame","Preah Khleang"]},"Prey Veng":{"Ba Phnum":["Boeng Preah","Cheung Phnum","Chheu Kach","Reaks Chey","Roung Damrei","Sdau Kaong","Spueu Ka","Spueu Kha","Theay"],"Kamchay Mear":["Cheach","Doun Koeng","Krabau","Kranhung","Seang Khveang","Smaong Khang Cheung","Smaong Khang Tboung","Trabaek"],"Kampong Trabaek":["Ansaong","Cham","Cheang Daek","Chrey","Kampong Trabaek","Kansoam Ak","Kou Khchak","Peam Montear","Prasat","Pratheat","Prey Chhor","Prey Poun","Thkov"],"Kanhchriech":["Chong Ampil","Kanhchriech","Kdoeang Reay","Kouk Kong Kaeut","Kouk Kong Lech","Preal","Thma Pun","Tnaot"],"Me Sang":["Angkor Sar","Chi Phoch","Chres","Prey Khnes","Prey Rumdeng","Prey Totueng","Svay Chrum","Trapeang Srae"],"Pea Reang":["Kampong Popil","Kampong Prang","Kanhcham","Mesar Prachan","Prey Pnov","Prey Sniet","Prey Sralet","Reab","Roka"],"Peam Chor":["Angkor Angk","Kampong Prasat","Kaoh Chek","Kaoh Roka","Kaoh Sampov","Krang Ta Yang","Preaek Krabau","Preaek Sambuor","Ruessei Srok","Svay Phluoh"],"Peam Ro":["Ba Baong","Banlich Prasat","Neak Loeang","Peam Mean Chey","Peam Ro","Preaek Khsay Ka","Preaek Khsay Kha","Prey Kandieng"],"Preah Sdach":["Angkor Reach","Banteay Chakrei","Boeng Daol","Chey Kampok","Kampong Soeng","Krang Svay","Lvea","Preah Sdach","Reathor","Rumchek","Sena Reach Otdam"],"Prey Veng":["Baray","Cheung Tuek","Kampong Leav","Ta Kao"],"Pur Rieng":["Kampong Ruessei","Pou Rieng","Preaek Anteah","Preaek Chrey","Preaek Ta Sar","Prey Kanlaong"],"Sithor Kandal":["Ampil Krau","Chrey Khmum","Lve","Pnov Ti Muoy","Pnov Ti Pir","Pou Ti","Preaek Changkran","Prey Daeum Thnoeng","Prey Tueng","Ruessei Sanh","Rumlech"],"Svay Antor":["Angkor Tret","Chea Khlang","Chrey","Damrei Puon","Me Bon","Pean Roung","Popueus","Prey Khla","Samraong","Svay Antor","Tuek Thla"]},"Pursat":{"Bakan":["Boeng Bat Kandaol","Boeng Khnar","Khnar Totueng","Me Tuek","Ou Ta Paong","Rumlech","Snam Preah","Svay Doun Kaev","Trapeang chorng"],"Kandieng":["Anlong Vil","Kandieng","Kanhchor","Kaoh Chum","Reang Til","Srae Sdok","Svay Luong","Sya","Veal"],"Krakor":["Anlong Tnaot","Ansa Chambak","Boeng Kantuot","Chheu Tom","Kampong Luong","Kampong Pou","Kbal Trach","Ou Sandan","Sna Ansa","Svay Sa","Tnaot Chum"],"Phnum Kravanh":["Bak Chenhchien","Leach","Prongil","Rokat","Samraong","Santreae"],"Pursat":["Banteay Dei","Chamraeun Phal","Lolok Sa","Phteah Prey","Prey Nhi","Roleab","Svay At"],"Ta Lou Senchey":["Phteah Rung","Ta Lou"],"Veal Veaeng":["Anlong Reab","Krapeu Pir","Ou Saom","Pramaoy","Thma Da"]},"Ratanak Kiri":{"Andoung Meas":["Malik","Nhang","Ta Lav"],"Ban Lung":["Boeng Kansaeng","Kachanh","Labansiek","Yeak Laom"],"Bar Kaev":["Kak","Keh Chong","La Minh","Lung Khung","Saeung","Ting Chak"],"Koun Mom":["Serei Mongkol","Srae Angkrorng","Ta Ang","Teun","Trapeang Chres","Trapeang Kraham"],"Lumphat":["Ba Tang","Chey Otdam","Ka Laeng","Lbang Muoy","Lbang Pir","Seda"],"Ou Chum":["Aekakpheap","Cha Ung","Kalai","L'ak","Ou Chum","Pouy","Sameakki"],"Ou Ya Dav":["Bar Kham","Lum Choar","Pa Te","Pak Nhai","Saom Thum","Sesan","Ya Tung"],"Ta Veaeng":["Ta Veaeng Kraom","Ta Veaeng Leu"],"Veun Sai":["Hat Pak","Ka Choun","Kaoh Pang","Kaoh Peak","Kok Lak","Pa Kalan","Phnum Kok","Pong","Veun Sai"]},"Siemreap":{"Angkor Chum":["Char Chhuk","Doun Peng","Kouk Doung","Koul","Nokor Pheas","Srae Khvav","Ta Saom"],"Angkor Thum":["Chob Ta Trav","Leang Dai","Peak Snaeng","Svay Chek"],"Banteay Srei":["Khnar Sanday","Khun Ream","Preah Dak","Rumchek","Run Ta Aek","Tbaeng"],"Chi Kraeng":["Anlong Samnar","Chi Kraeng","Kampong Kdei","Khvav","Kouk Thlok Kraom","Kouk Thlok Leu","Lveaeng Ruessei","Pongro Kraom","Pongro Leu","Ruessei Lok","Sangvaeuy","Spean Tnaot"],"Kralanh":["Chanleas Dai","Kampong Thkov","Kralanh","Krouch Kor","Roung Kou","Saen Sokh","Sambuor","Snuol","Sranal","Ta An"],"Prasat Bakong":["Ampil","Bakong","Ballangk","Kampong Phluk","Kandaek","Kantreang","Mean Chey","Roluos","Trapeang Thum"],"Puok":["Doun Kaev","Kaev Poar","Kdei Run","Khnat","Lvea","Mukh Paen","Pou Treay","Prey Chruk","Puok","Reul","Samraong Yea","Sasar Sdam","Trei Nhoar","Yeang"],"Siemreap":["Chong Khnies","Chreav","Kok Chak","Krabei Riel","Nokor Thum","Sala Kamreuk","Siem Reab","Sla Kram","Sngkat Sambuor","Srangae","Svay Dankum","Tuek Vil"],"Soutr Nikom":["Chan Sa","Dam Daek","Dan Run","Kampong Khleang","Khchas","Khnar Pou","Kien Sangkae","Popel","Samraong","Ta Yaek"],"Srei Snam":["Chrouy Neang Nguon","Klang Hay","Moung","Prei","Slaeng Spean","Tram Sasar"],"Svay Leu":["Boeng Mealea","Kantuot","Khnang Phnum","Svay Leu","Ta Siem"],"Varin":["Lvea Krang","Prasat","Srae Nouy","Svay Sa","Varin"]},"Stung Treng":{"Borei Ou Svay Senchey":["Kaoh Snaeng","Ou Svay","Preah Rumkel"],"Sesan":["Kamphun","Kbal Romeas","Phluk","Samkhuoy","Sdau","Srae Kor","Ta Lat"],"Siem Bouk":["Kaoh Preah","Kaoh Sampeay","Kaoh Sralay","Ou Mreah","Ou Ruessei Kandal","Siem Bouk","Srae Krasang"],"Siem Pang":["Preaek Meas","Santepheap","Sekong","Srae Sambour","Tma Kaev"],"Stueng Traeng":["Preah Bat","Sameakki","Srah Ruessei","Stueng Traeng"],"Thala Barivat":["Anlong Chrey","Anlong Phe","Chamkar Leu","Kang Cham","Ou Rai","Sam Ang","Srae Ruessei","Thala Barivat"]},"Svay Rieng":{"Bavet":["Bati","Bavet","Chrak Mtes","Prasat","Prey Angkunh"],"Chantrea":["Chantrea","Chres","Me Sar Thngak","Prey Kokir","Samraong","Tuol Sdei"],"Kampong Rou":["Banteay Krang","Khsaetr","Nhor","Preah Ponlea","Prey Thum","Reach Montir","Samlei","Samyaong","Svay Ta Yean","Thmei","Tnaot"],"Romeas Haek":["Ampil","Andoung Pou","Andoung Trabaek","Angk Prasrae","Chantrei","Chrey Thum","Doung","Kampong Trach","Kokir","Krasang","Mream","Mukh Da","Sambatt Mean Chey","Sambuor","Trapeang Sdau","Tras"],"Rumduol":["Bos Mon","Chrung Popel","Kampong Ampil","Kampong Chak","Meun Chey","Pong Tuek","Sangkae","Svay Chek","Thmea","Thna Thnong"],"Svay Chrum":["Angk Ta Sou","Basak","Chambak","Chheu Teal","Doun Sa","Kampong Chamlang","Kouk Pring","Kraol Kou","Kruos","Pouthi Reach","Svay Angk","Svay Chrum","Svay Thum","Svay Yea","Ta Suos","Thlok"],"Svay Rieng":["Chek","Koy Trabaek","Pou Ta Hao","Prey Chhlak","Sangkhoar","Svay Rieng","Svay Toea"],"Svay Teab":["Kandieng Reay","Koki Saom","Monourom","Popeaet","Prasoutr","Prey Ta Ei","Romeang Thkaol","Sambuor","Svay Rumpear"]},"Takeo":{"Angkor Borei":["Angkor Borei","Ba Srae","Kouk Thlok","Ponley","Preaek Phtoul","Prey Phkoam"],"Bati":["Chambak","Champei","Doung","Kandoeng","Komar Reachea","Krang Leav","Krang Thnong","Lumpong","Pea Ream","Pot Sar","Sour Phi","Tang Doung","Tnaot","Trapeang Krasang","Trapeang Sab"],"Borei Cholsar":["Borei Cholsar","Chey Chouk","Doung Khpos","Kampong Krasang","Kouk Pou"],"Doun Kaev":["Baray","Roka Knong","Roka Krau"],"Kaoh Andaet":["Krapum Chhuk","Pech Sar","Prey Khla","Prey Yuthka","Romenh","Thlea Prachum"],"Kiri Vong":["Angk Prasat","Kamnab","Kampeaeng","Kiri Chong Kaoh","Kouk Prech","Phnum Den","Preah Bat Choan Chum","Prey Ampok","Prey Rumdeng","Ream Andaeuk","Saom","Ta Ou"],"Prey Kabbas":["Angkanh","Ban Kam","Champa","Char","Kampeaeng","Kampong Reab","Kdanh","Pou Rumchak","Prey Kabbas","Prey Lvea","Prey Phdau","Snao","Tang Yab"],"Samraong":["Boeng Tranh Khang Cheung","Boeng Tranh Khang Tboung","Cheung Kuon","Chumreah Pen","Khvav","Lumchang","Rovieng","Samraong","Sla","Soengh","Trea"],"Tram Kak":["Angk Ta Saom","Cheang Tong","Kus","Leay Bour","Nhaeng Nhang","Otdam Soriya","Ou Saray","Popel","Samraong","Srae Ronoung","Ta Phem","Tram Kak","Trapeang Kranhoung","Trapeang Thum Khang Cheung","Trapeang Thum Khang Tboung"],"Treang":["Angk Kaev","Angk Khnor","Angkanh","Chi Khma","Khvav","Prambei Mum","Prey Sloek","Roneam","Sambuor","Sanlung","Smaong","Srangae","Thlok","Tralach"]},"Tboung Khmum":{"Dambae":["Chong Cheach","Dambae","Kouk Srok","Neang Teut","Seda","Trapeang Pring","Tuek Chrov"],"Krouch Chhmar":["Chhuk","Chumnik","Kampong Treas","Kaoh Pir","Krouch Chhmar","Peus Muoy","Peus Pir","Preaek A chi","Roka Khnor","Svay Khleang","Trea","Tuol Snuol"],"Memot":["Chan Mul","Choam","Choam Kravien","Choam Ta Mau","Dar","Kampoan","Kokir","Memong","Memot","Rumchek","Rung","Tonlung","Tramung","Triek"],"Ou Reang Ov":["Ampil Ta Pok","Chak","Damril","Kong Chey","Mien","Preah Theat","Tuol Souphi"],"Ponhea Kraek":["Dountei","Kak","Kandaol Chrum","Kaong Kang","Kraek","Popel","Trapeang Phlong","Veal Mlu"],"Suong":["Suong","Vihear Luong"],"Tboung Khmum":["Anhchaeum","Boeng Pruol","Chikor","Chirou Ti Muoy","Chirou Ti Pir","Chob","Kor","Lngieng","Mong Riev","Peam Chileang","Roka Po Pram","Sralab","Thma Pech","Tonle Bet"]},"Phnom Penh":{"(blank)":["(blank)"]}}</script>
+<!-- === App Script === -->
+  <script>
+  /* Tabs */
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.onclick=()=>{
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+      document.getElementById(t.dataset.page).classList.add('active');
+      if(t.dataset.page==='recordsPage') loadRecords();
+    };
+  });
+
+  /* Helpers */
+  const $ = s => document.querySelector(s);
+  const todayISO = () => new Date().toISOString().slice(0,10);
+  const timeNow  = () => new Date().toTimeString().slice(0,5);
+
+  /* === Admin data loader (offline) === */
+  const KH_GEO = JSON.parse(document.getElementById('kh-geo').textContent);
+  const provSel = $('#province'), distSel = $('#district'), commSel = $('#commune');
+
+  function fillSelect(el, items, placeholder){
+    el.innerHTML = `<option value="">${placeholder}</option>` + items.map(v=>`<option value="${v}">${v}</option>`).join('');
+  }
+
+  function initProvinces(){
+    const provinces = Object.keys(KH_GEO).sort((a,b)=>a.localeCompare(b,'en'));
+    fillSelect(provSel, provinces, 'Select Province');
+    fillSelect(distSel, [], 'Select District');
+    fillSelect(commSel, [], 'Select Commune');
+  }
+
+  provSel.addEventListener('change', ()=>{
+    const p = provSel.value;
+    if(!p){ fillSelect(distSel, [], 'Select District'); fillSelect(commSel, [], 'Select Commune'); return; }
+    const districts = Object.keys(KH_GEO[p]||{}).sort((a,b)=>a.localeCompare(b,'en'));
+    fillSelect(distSel, districts, 'Select District');
+    fillSelect(commSel, [], 'Select Commune');
+  });
+
+  distSel.addEventListener('change', ()=>{
+    const p = provSel.value, d = distSel.value;
+    const communes = (KH_GEO[p]?.[d]||[]).slice().sort((a,b)=>a.localeCompare(b,'en'));
+    fillSelect(commSel, communes, 'Select Commune');
+  });
+
+  // Initialize on page load
+  initProvinces();
+
+  // === Require Province/District/Commune before actions ===
+  function ensureLocationSelected(){
+    const p = document.getElementById('province').value;
+    const d = document.getElementById('district').value;
+    const c = document.getElementById('commune').value;
+    if(!p || !d || !c){
+      alert('Please select Province, District, and Commune first.');
+      return false;
+    }
+    return true;
+  }
+
+
+
+  /* Defaults + Quick */
+  $('#date').value = todayISO();
+  $('#todayBtn').onclick = ()=> $('#date').value = todayISO();
+  $('#startNowBtn').onclick = ()=> $('#startTime').value = timeNow();
+  $('#endNowBtn').onclick   = ()=> $('#endTime').value = timeNow();
+
+  /* From toggle */
+  $('#fromType').onchange = ()=>{
+    $('#fromOther').style.display = $('#fromType').value==='Other' ? 'block' : 'none';
+    if($('#fromType').value!=='Other') $('#fromOther').value='';
+  };
+
+  /* Dummy */
+  $('#dummyBtn').onclick = ()=>{
+    $('#date').value = todayISO();
+    $('#salesId').value = 'DUMMY01';
+    $('#workingDay').value = 1;
+    $('#fromType').value = 'Base'; $('#fromOther').value=''; $('#fromOther').style.display='none';
+    $('#startTime').value = timeNow(); $('#endTime').value = timeNow();
+    $('#province').value = 'Phnom Penh'; $('#district').value='Dangkor'; $('#commune').value='JPV';
+    $('#returnBase').value = 'Yes';
+    $('#note').value = 'Visit customer, check stock, collect orders.';
+    if(navigator.vibrate) try{navigator.vibrate(30);}catch(e){}
+  };
+
+  /* GPS */
+  $('#locBtn').onclick = ()=>{
+    $('#locStatus').textContent = 'Getting GPS...';
+    $('#gpsSpin').innerHTML = '<span class="spinner"></span>';
+    $('#locBtn').disabled = true;
+    if(!navigator.geolocation){
+      $('#locStatus').textContent = 'Geolocation not supported';
+      $('#gpsSpin').innerHTML=''; $('#locBtn').disabled=false; return;
+    }
+    navigator.geolocation.getCurrentPosition(pos=>{
+      const lat = pos.coords.latitude, lng = pos.coords.longitude;
+      $('#locStatus').textContent = `Lat ${lat.toFixed(5)}, Lng ${lng.toFixed(5)}`;
+      $('#locStatus').dataset.lat = lat;
+      $('#locStatus').dataset.lng = lng;
+      $('#gpsSpin').innerHTML=''; $('#locBtn').disabled=false;
+    }, err=>{
+      $('#locStatus').textContent = 'Failed: ' + err.message;
+      $('#gpsSpin').innerHTML=''; $('#locBtn').disabled=false;
+    }, {enableHighAccuracy:true, timeout:15000});
+  };
+
+  /* Image compression */
+  function compressImg(file, max=900){
+    return new Promise((resolve,reject)=>{
+      const r=new FileReader();
+      r.onload=e=>{
+        const img=new Image();
+        img.onload=()=>{
+          let w=img.width, h=img.height;
+          if(w>max){ h*=max/w; w=max; }
+          if(h>max){ w*=max/h; h=max; }
+          const c=document.createElement('canvas'); c.width=w; c.height=h;
+          c.getContext('2d').drawImage(img,0,0,w,h);
+          resolve(c.toDataURL('image/jpeg',0.72));
+        };
+        img.onerror=reject; img.src=e.target.result;
+      };
+      r.onerror=reject; r.readAsDataURL(file);
+    });
+  }
+
+  /* IndexedDB */
+  let db;
+  const DB_NAME='SEWOS_DB_v1', STORE='records';
+  const openReq=indexedDB.open(DB_NAME,1);
+  openReq.onupgradeneeded=()=> openReq.result.createObjectStore(STORE,{keyPath:'id'});
+  openReq.onsuccess=()=> db=openReq.result;
+  openReq.onerror =()=> alert('Storage failed to open. Try another browser.');
+
+  /* Save + validation */
+  $('#saveBtn').onclick = async ()=>{
+    const reqFields = ['date','salesId','workingDay','startTime','endTime','note'];
+    for(const f of reqFields){
+      if(!$(`#${f}`).value){ alert(`Please fill ${f.replace(/([A-Z])/g,' $1').trim()}.`); return; }
+    }
+    $('#loadStatus').textContent='Saving...';
+    let photoData=''; const file=$('#photo').files[0];
+    if(file) photoData=await compressImg(file);
+
+    const rec={
+      id:crypto.randomUUID(),
+      date:$('#date').value, salesId:$('#salesId').value, workingDay:$('#workingDay').value,
+      from:($('#fromType').value==='Other'? $('#fromOther').value : 'Base'),
+      start:$('#startTime').value, end:$('#endTime').value,
+      province:$('#province').value, district:$('#district').value, commune:$('#commune').value,
+      returnBase:$('#returnBase').value, note:$('#note').value,
+      lat:$('#locStatus').dataset.lat||'', lng:$('#locStatus').dataset.lng||'',
+      photo:photoData, time:new Date().toLocaleString()
+    };
+
+    const tx=db.transaction(STORE,'readwrite');
+    tx.objectStore(STORE).add(rec);
+    tx.oncomplete=()=>{ $('#loadStatus').textContent='Saved!'; setTimeout(()=>{ resetForm(); $('#loadStatus').textContent=''; }, 400); };
+    tx.onerror=()=> $('#loadStatus').textContent='Save failed.';
+  };
+
+  function resetForm(){
+    $('#date').value=todayISO();
+    $('#salesId').value=''; $('#workingDay').value='';
+    $('#fromType').value='Base'; $('#fromOther').value=''; $('#fromOther').style.display='none';
+    $('#startTime').value=''; $('#endTime').value='';
+    $('#province').value=''; $('#district').value=''; $('#commune').value='';
+    $('#returnBase').value='Yes'; $('#note').value='';
+    $('#photo').value=''; $('#locStatus').textContent='Not captured';
+    delete $('#locStatus').dataset.lat; delete $('#locStatus').dataset.lng;
+  }
+
+  /* Render records */
+  function loadRecords(){
+    const wrap=$('#recordsList'); wrap.innerHTML='';
+    const tx=db.transaction(STORE,'readonly'); const req=tx.objectStore(STORE).getAll();
+    req.onsuccess=()=>{
+      const list=(req.result||[]).sort((a,b)=> new Date(b.time)-new Date(a.time));
+      if(list.length===0){ wrap.innerHTML='<div class="hint">No records yet.</div>'; return; }
+      list.forEach(r=>{
+        const el=document.createElement('div'); el.className='card';
+        el.innerHTML=`
+          <div class="hdr">
+            <div class="ava"></div>
+            <div><div class="usr">${r.salesId||'Unknown'}</div><div class="time">${r.time||''}</div></div>
+          </div>
+          <div><b>${r.date||''}</b> • Day ${r.workingDay||''} • ${r.start||''}-${r.end||''}</div>
+          <div class="hint" style="margin-top:6px">
+            From: ${r.from||''} ${r.returnBase==='No'?'(No return to base)':'(Return to base)'}<br>
+            Location: ${r.province||''}${r.district?' / '+r.district:''}${r.commune?' / '+r.commune:''}
+          </div>
+          <div style="margin-top:6px"><b>Objective:</b> ${escapeHtml(r.note||'')}</div>
+          ${r.photo?`<img class="photo" src="${r.photo}">`:''}
+          <div class="actions">
+            ${r.lat?`<a class="ghost" target="_blank" href="https://www.google.com/maps?q=${r.lat},${r.lng}">📍 View Map</a>`:'<span class="hint">No GPS</span>'}
+            <button class="danger" onclick="delRec('${r.id}')">Delete</button>
+          </div>
+        `;
+        wrap.appendChild(el);
+      });
+    };
+  }
+  function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+  window.delRec=id=>{ const tx=db.transaction(STORE,'readwrite'); tx.objectStore(STORE).delete(id); tx.oncomplete=()=>loadRecords(); };
+
+  /* Clear data */
+  $('#clearData').onclick=()=>{ if(!confirm('Delete ALL your saved records?')) return; const tx=db.transaction(STORE,'readwrite'); tx.objectStore(STORE).clear(); tx.oncomplete=()=>loadRecords(); };
+
+  /* Export: Excel (with embedded images) */
+  $('#downloadExcel').onclick = async ()=>{
+    const recs = await getAllRecs();
+    const wb = new ExcelJS.Workbook(); wb.creator='SE-WOS'; wb.created=new Date();
+    const ws = wb.addWorksheet('Missions');
+    ws.columns=[
+      {header:'Date',key:'date',width:12}, {header:'Sales ID',key:'salesId',width:12}, {header:'Working Day',key:'workingDay',width:12},
+      {header:'From',key:'from',width:10}, {header:'Start',key:'start',width:8}, {header:'End',key:'end',width:8},
+      {header:'Province',key:'province',width:16}, {header:'District',key:'district',width:16}, {header:'Commune',key:'commune',width:16},
+      {header:'Return Base',key:'returnBase',width:12}, {header:'Objective / Activities',key:'note',width:40}, {header:'Lat',key:'lat',width:10}, {header:'Lng',key:'lng',width:10},
+      {header:'Photo',key:'photo',width:15}
+    ];
+    ws.getRow(1).font={bold:true};
+    ws.getRow(1).alignment={vertical:'middle',horizontal:'center'};
+
+    recs.forEach(r=> ws.addRow({
+      date:r.date,salesId:r.salesId,workingDay:r.workingDay,from:r.from,start:r.start,end:r.end,
+      province:r.province,district:r.district,commune:r.commune,returnBase:r.returnBase,
+      note:r.note,lat:r.lat,lng:r.lng,photo:''
+    }));
+
+    // Images
+    for(let i=0;i<recs.length;i++){
+      if(!recs[i].photo) continue;
+      const base64=recs[i].photo.split(',')[1];
+      try{
+        const imgId=wb.addImage({base64,extension:'jpeg'});
+        const row=i+2; ws.getRow(row).height=90;
+        ws.addImage(imgId,{tl:{col:13,row:row-1},ext:{width:80,height:80}}); // Photo column
+      }catch(e){}
+    }
+    // Borders + freeze header
+    ws.eachRow(row=>row.eachCell(c=>{ c.border={top:{style:'thin'},left:{style:'thin'},bottom:{style:'thin'},right:{style:'thin'}}; }));
+    ws.views=[{state:'frozen',ySplit:1}];
+
+    const buf = await wb.xlsx.writeBuffer();
+    saveAs(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),`missions_${todayISO()}.xlsx`);
+  };
+
+  /* Export: ZIP (CSV + photos) */
+  $('#downloadZip').onclick = async ()=>{
+    const recs=await getAllRecs();
+    const zip=new JSZip();
+    zip.file('records.csv','\uFEFF'+toCSV(recs),{binary:false}); // BOM for Excel
+    const photos=zip.folder('photos');
+    for(const r of recs){ if(r.photo){ const b64=r.photo.split(',')[1]; photos.file(`${r.id}.jpg`, b64, {base64:true}); } }
+    const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',mimeType:'application/zip'});
+    saveAs(blob, `missions_export_${todayISO()}.zip`);
+  };
+
+  function toCSV(recs){
+    const header=['id','date','salesId','workingDay','from','start','end','province','district','commune','returnBase','note','lat','lng','photoName'];
+    const rows=[header.join(',')];
+    const esc = s => `"${String(s??'').replace(/"/g,'""')}"`;
+    recs.forEach(r=> rows.push([
+      esc(r.id),esc(r.date),esc(r.salesId),esc(r.workingDay),esc(r.from),
+      esc(r.start),esc(r.end),esc(r.province),esc(r.district),esc(r.commune),
+      esc(r.returnBase),esc(r.note),esc(r.lat),esc(r.lng), esc(r.photo?`${r.id}.jpg`:'')
+    ].join(',')));
+    return rows.join('\n');
+  }
+
+  function getAllRecs(){ return new Promise(res=>{ const tx=db.transaction(STORE,'readonly'); const req=tx.objectStore(STORE).getAll(); req.onsuccess=()=>res(req.result||[]); req.onerror=()=>res([]); }); }
+  </script>
+</body>
+</html>

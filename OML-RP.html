@@ -11,15 +11,11 @@
 
 <style>
 html,body{
-  margin:0;
-  height:100%;
+  margin:0;height:100%;
   font-family:system-ui;
   background:radial-gradient(circle at top,#ff2d2d,#5a0000);
 }
-body.no-scroll{
-  overflow:hidden;
-  touch-action:none;
-}
+body.no-scroll{overflow:hidden;touch-action:none}
 
 .card{
   width:320px;height:520px;
@@ -39,38 +35,20 @@ body.no-scroll{
 }
 .hidden{display:none}
 
-#scratch{
-  position:absolute;
-  inset:0;
-  z-index:5;
-  touch-action:none;
-}
+#scratch{position:absolute;inset:0;z-index:5;touch-action:none}
 
-#prizeLayer{
-  position:absolute;
-  inset:0;
-  z-index:1;
-}
-#prizeLayer.big{
-  transform:scale(1.45);
-}
+#prizeLayer{position:absolute;inset:0;z-index:1}
+#prizeLayer.big{transform:scale(1.45)}
 
 #inputLayer{
-  position:absolute;
-  inset:0;
-  z-index:6;
+  position:absolute;inset:0;z-index:6;
   background:rgba(0,0,0,.45);
   backdrop-filter:blur(4px);
 }
 
 #progressText{
-  position:absolute;
-  bottom:12px;
-  left:0;right:0;
-  text-align:center;
-  font-weight:bold;
-  color:#FFD700;
-  z-index:7;
+  position:absolute;bottom:12px;left:0;right:0;
+  text-align:center;font-weight:bold;color:#FFD700;z-index:7;
 }
 </style>
 </head>
@@ -118,6 +96,7 @@ import {
   doc, runTransaction, query, where
 } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
+/* FIREBASE */
 const firebaseConfig={
   apiKey:"AIzaSyAc53UEPP9_bz0W3iBmhghKROPL-FhsQCg",
   authDomain:"luckydraw-oml.firebaseapp.com",
@@ -126,41 +105,64 @@ const firebaseConfig={
 const app=initializeApp(firebaseConfig);
 const db=getFirestore(app);
 
+/* CONST */
 const PLACEHOLDER_IMG="https://png.pngtree.com/recommend-works/png-clipart/20250827/ourmid/pngtree-spring-festival-2026-year-of-the-horse-traditional-festival-golden-lunar-png-image_17142053.webp";
 
 let prize=null;
 let finished=false;
 let currentUserId="";
+let currentCompanyId="";
 
+/* RESET */
 function resetUI(msg){
   alert(msg);
   openBtn.disabled=false;
   openBtn.textContent="Open Ang Pao 🧧";
 }
 
+/* MAIN */
 openBtn.onclick=async()=>{
   const uid=userId.value.trim();
   if(!uid) return resetUI("Please enter ID");
   currentUserId=uid;
 
   openBtn.disabled=true;
-  openBtn.textContent="Summoning Luck...";
+  openBtn.textContent="Checking Luck...";
 
-  const exist=await getDocs(query(collection(db,"winners"),where("userId","==",uid)));
-  if(!exist.empty) return resetUI("Already opened");
+  /* CHECK EXISTING WINNER */
+  const winnerSnap=await getDocs(
+    query(collection(db,"winners"), where("userId","==",uid))
+  );
 
-  const companies=await getDocs(collection(db,"companies"));
-  let company=null;
-  companies.docs.forEach(d=>{
-    if(d.data().ids?.includes(uid)) company=d.id;
+  if(!winnerSnap.empty){
+    const win=winnerSnap.docs[0].data();
+    await loadExistingWin(win);
+    return;
+  }
+
+  /* FIND COMPANY */
+  const companySnap=await getDocs(collection(db,"companies"));
+  let companyId=null;
+
+  companySnap.docs.forEach(d=>{
+    if(d.data().ids?.includes(uid)) companyId=d.id;
   });
-  if(!company) return resetUI("ID not found");
 
-  const snap=await getDocs(collection(db,"prizes"));
-  const available=snap.docs
+  if(!companyId) return resetUI("ID not found");
+  currentCompanyId=companyId;
+
+  /* GET PRIZES (STRICT COMPANY) */
+  const prizeSnap=await getDocs(
+    query(collection(db,"prizes"), where("companyId","==",companyId))
+  );
+
+  const available=prizeSnap.docs
     .map(d=>({id:d.id,...d.data()}))
-    .filter(p=>p.companyId===company && (p.tickets?.length||0)<p.count);
-  if(!available.length) return resetUI("No prizes left");
+    .filter(p=>(p.tickets?.length||0)<p.count);
+
+  if(!available.length){
+    return resetUI("No prizes available for your company");
+  }
 
   prize=available[Math.floor(Math.random()*available.length)];
 
@@ -170,13 +172,13 @@ openBtn.onclick=async()=>{
   inputLayer.classList.add("hidden");
   scratch.classList.remove("hidden");
   progressText.classList.remove("hidden");
-
   document.body.classList.add("no-scroll");
 
-  initScratch(uid,company);
+  initScratch(uid,companyId);
 };
 
-function initScratch(uid,company){
+/* SCRATCH */
+function initScratch(uid,companyId){
   const ctx=scratch.getContext("2d",{willReadFrequently:true});
   scratch.width=card.clientWidth;
   scratch.height=card.clientHeight;
@@ -204,17 +206,14 @@ function initScratch(uid,company){
 
     const r=scratch.getBoundingClientRect();
     const t=e.touches?e.touches[0]:e;
-    const x=t.clientX-r.left;
-    const y=t.clientY-r.top;
-
-    draw(x,y);
+    draw(t.clientX-r.left,t.clientY-r.top);
 
     const p=Math.floor(percent()*100);
     progressText.textContent="Luck Revealed: "+p+"%";
 
     if(p>=70){
       finished=true;
-      reveal(uid,company);
+      reveal(uid,companyId);
     }
   }
 
@@ -222,28 +221,51 @@ function initScratch(uid,company){
   scratch.addEventListener("touchmove",move,{passive:false});
 }
 
-async function reveal(uid,company){
+/* REVEAL NEW WIN */
+async function reveal(uid,companyId){
   await runTransaction(db,async tx=>{
-    const ref=doc(db,"prizes",prize.id);
-    const snap=await tx.get(ref);
+    const prizeRef=doc(db,"prizes",prize.id);
+    const snap=await tx.get(prizeRef);
+
+    if(snap.data().companyId!==companyId){
+      throw new Error("Company mismatch blocked");
+    }
+
     const tickets=snap.data().tickets||[];
     tickets.push(uid);
-    tx.update(ref,{tickets});
+    tx.update(prizeRef,{tickets});
+
     await addDoc(collection(db,"winners"),{
       userId:uid,
       prizeId:prize.id,
       prizeName:prize.name,
-      companyId:company,
+      companyId,
       timestamp:Date.now()
     });
   });
 
+  showWin(prize);
+}
+
+/* LOAD EXISTING WIN */
+async function loadExistingWin(win){
+  const prizeDoc=await getDocs(
+    query(collection(db,"prizes"), where("__name__","==",win.prizeId))
+  );
+
+  prize={id:win.prizeId, ...prizeDoc.docs[0].data()};
+  showWin(prize);
+}
+
+/* SHOW WIN */
+function showWin(p){
   scratch.classList.add("hidden");
   progressText.classList.add("hidden");
+  inputLayer.classList.add("hidden");
   document.body.classList.remove("no-scroll");
 
-  prizeImg.src=prize.imageUrl;
-  prizeText.textContent=prize.name;
+  prizeImg.src=p.imageUrl;
+  prizeText.textContent=p.name;
   prizeLayer.classList.add("big");
 
   afterWin.classList.remove("hidden");
@@ -256,6 +278,7 @@ async function reveal(uid,company){
   });
 }
 
+/* DOWNLOAD */
 downloadBtn.onclick=async()=>{
   const canvas=await html2canvas(card,{scale:2});
   const link=document.createElement("a");

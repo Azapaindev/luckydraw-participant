@@ -13,8 +13,7 @@
 html,body{
   margin:0;height:100%;
   font-family:system-ui;
-  background:
-    radial-gradient(circle at top,#ffcc4d,#7a0000);
+  background:radial-gradient(circle at top,#ffcc4d,#7a0000);
 }
 body.no-scroll{overflow:hidden;touch-action:none}
 
@@ -23,9 +22,7 @@ body.no-scroll{overflow:hidden;touch-action:none}
   width:320px;height:520px;
   border-radius:28px;
   background:linear-gradient(160deg,#b00000,#7a0000);
-  box-shadow:
-    0 0 25px rgba(255,204,77,.8),
-    0 25px 70px rgba(0,0,0,.75);
+  box-shadow:0 0 25px rgba(255,204,77,.8),0 25px 70px rgba(0,0,0,.75);
   position:relative;
   overflow:hidden;
 }
@@ -50,7 +47,7 @@ body.no-scroll{overflow:hidden;touch-action:none}
   text-shadow:0 0 18px rgba(255,215,0,.9);
 }
 
-/* INPUT – ANG PAO RED */
+/* INPUT */
 #inputLayer{
   position:absolute;
   inset:0;
@@ -69,7 +66,7 @@ body.no-scroll{overflow:hidden;touch-action:none}
   z-index:7;
 }
 
-/* 🔥 FIRECRACKERS */
+/* FIRECRACKERS */
 .firecracker{
   position:absolute;
   top:12px;
@@ -80,10 +77,10 @@ body.no-scroll{overflow:hidden;touch-action:none}
 .firecracker.left{left:10px}
 .firecracker.right{right:10px}
 
-/* 🦁 LION DANCE – NO EFFECTS */
+/* LION */
 #lion{
-  width:280px;        /* bigger */
-  margin-top:-20px;   /* move up a bit */
+  width:280px;
+  margin-top:-20px;
   margin-bottom:10px;
 }
 </style>
@@ -107,13 +104,11 @@ body.no-scroll{overflow:hidden;touch-action:none}
 
 <div id="inputLayer" class="center px-6">
 
-  <!-- 🔥 FIRECRACKERS -->
   <img class="firecracker left"
     src="https://i.pinimg.com/originals/f2/28/49/f22849aa488dfefce7ac2a17b5b4d0d9.gif">
   <img class="firecracker right"
     src="https://i.pinimg.com/originals/f2/28/49/f22849aa488dfefce7ac2a17b5b4d0d9.gif">
 
-  <!-- 🦁 LION DANCE (RAW GIF) -->
   <img id="lion"
     src="https://i.pinimg.com/originals/3f/c1/be/3fc1bef451c684ddcfb9f5bb98cd30f3.gif"
     alt="Lion Dance">
@@ -171,15 +166,17 @@ function resetUI(msg){
 
 /* MAIN */
 openBtn.onclick=async()=>{
-  const uid=String(userId.value).trim();
-  if(!uid) return resetUI("Please enter ID");
-  currentUserId=uid;
+  const uidRaw = userId.value.trim();
+  if(!uidRaw) return resetUI("Please enter ID");
+
+  const uidNum = Number(uidRaw);   // 🔑 normalize input
+  currentUserId = uidRaw;
 
   openBtn.disabled=true;
   openBtn.textContent="Checking Luck...";
 
   const winnerSnap=await getDocs(
-    query(collection(db,"winners"), where("userId","==",uid))
+    query(collection(db,"winners"), where("userId","==",uidRaw))
   );
   if(!winnerSnap.empty){
     const win=winnerSnap.docs[0].data();
@@ -189,17 +186,22 @@ openBtn.onclick=async()=>{
 
   const companySnap=await getDocs(collection(db,"companies"));
   let companyId=null;
+
   companySnap.docs.forEach(d=>{
     (d.data().ids||[]).forEach(x=>{
-      if(String(x).trim()===uid) companyId=d.id;
+      if(Number(x) === uidNum){   // ✅ FIX HERE
+        companyId=d.id;
+      }
     });
   });
+
   if(!companyId) return resetUI("ID not found");
 
   const prizeSnap=await getDocs(collection(db,"prizes"));
   const available=prizeSnap.docs
     .map(d=>({id:d.id,...d.data()}))
     .filter(p=>p.companyId===companyId && (p.tickets?.length||0)<p.count);
+
   if(!available.length) return resetUI("No prizes available");
 
   prize=available[Math.floor(Math.random()*available.length)];
@@ -212,7 +214,7 @@ openBtn.onclick=async()=>{
   progressText.classList.remove("hidden");
   document.body.classList.add("no-scroll");
 
-  initScratch(uid,companyId);
+  initScratch(uidRaw,companyId);
 };
 
 /* SCRATCH */

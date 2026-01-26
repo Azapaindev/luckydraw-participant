@@ -13,18 +13,24 @@
 html,body{
   margin:0;height:100%;
   font-family:system-ui;
-  background:radial-gradient(circle at top,#ff2d2d,#5a0000);
+  background:
+    radial-gradient(circle at top,#ffcc4d,#7a0000);
 }
 body.no-scroll{overflow:hidden;touch-action:none}
 
+/* CARD */
 .card{
   width:320px;height:520px;
   border-radius:28px;
-  background:linear-gradient(145deg,#b00000,#7a0000);
-  box-shadow:0 0 40px rgba(255,215,0,.6),0 25px 70px rgba(0,0,0,.7);
+  background:linear-gradient(160deg,#b00000,#7a0000);
+  box-shadow:
+    0 0 25px rgba(255,204,77,.8),
+    0 25px 70px rgba(0,0,0,.75);
   position:relative;
   overflow:hidden;
 }
+
+/* COMMON */
 .center{
   display:flex;
   flex-direction:column;
@@ -37,18 +43,48 @@ body.no-scroll{overflow:hidden;touch-action:none}
 
 #scratch{position:absolute;inset:0;z-index:5;touch-action:none}
 
+/* PRIZE */
 #prizeLayer{position:absolute;inset:0;z-index:1}
-#prizeLayer.big{transform:scale(1.45)}
-
-#inputLayer{
-  position:absolute;inset:0;z-index:6;
-  background:rgba(0,0,0,.45);
-  backdrop-filter:blur(4px);
+#prizeLayer.big{
+  transform:scale(1.45);
+  text-shadow:0 0 18px rgba(255,215,0,.9);
 }
 
+/* INPUT – ANG PAO RED */
+#inputLayer{
+  position:absolute;
+  inset:0;
+  z-index:6;
+  background-color:#D42D20;
+}
+
+/* PROGRESS */
 #progressText{
-  position:absolute;bottom:12px;left:0;right:0;
-  text-align:center;font-weight:bold;color:#FFD700;z-index:7;
+  position:absolute;
+  bottom:12px;
+  left:0;right:0;
+  text-align:center;
+  font-weight:bold;
+  color:#FFD700;
+  z-index:7;
+}
+
+/* 🔥 FIRECRACKERS */
+.firecracker{
+  position:absolute;
+  top:12px;
+  width:64px;
+  pointer-events:none;
+  z-index:7;
+}
+.firecracker.left{left:10px}
+.firecracker.right{right:10px}
+
+/* 🦁 LION DANCE – NO EFFECTS */
+#lion{
+  width:280px;        /* bigger */
+  margin-top:-20px;   /* move up a bit */
+  margin-bottom:10px;
 }
 </style>
 </head>
@@ -56,8 +92,8 @@ body.no-scroll{overflow:hidden;touch-action:none}
 <body class="flex items-center justify-center text-white">
 
 <div>
-<h1 class="text-2xl font-extrabold text-center mb-2">🧧 恭喜发财</h1>
-<p class="text-center text-yellow-300 mb-4">Scratch to reveal your luck</p>
+<h1 class="text-2xl font-extrabold text-center mb-1 text-yellow-300">🧧 恭喜发财</h1>
+<p class="text-center text-yellow-200 mb-3">Scratch to reveal your luck</p>
 
 <div id="card" class="card">
 
@@ -70,11 +106,25 @@ body.no-scroll{overflow:hidden;touch-action:none}
 <div id="progressText" class="hidden">Luck Revealed: 0%</div>
 
 <div id="inputLayer" class="center px-6">
+
+  <!-- 🔥 FIRECRACKERS -->
+  <img class="firecracker left"
+    src="https://i.pinimg.com/originals/f2/28/49/f22849aa488dfefce7ac2a17b5b4d0d9.gif">
+  <img class="firecracker right"
+    src="https://i.pinimg.com/originals/f2/28/49/f22849aa488dfefce7ac2a17b5b4d0d9.gif">
+
+  <!-- 🦁 LION DANCE (RAW GIF) -->
+  <img id="lion"
+    src="https://i.pinimg.com/originals/3f/c1/be/3fc1bef451c684ddcfb9f5bb98cd30f3.gif"
+    alt="Lion Dance">
+
   <input id="userId"
     class="w-full p-3 rounded-full text-black text-center mb-4 font-semibold"
     placeholder="Enter your ID">
+
   <button id="openBtn"
-    class="bg-yellow-400 text-black px-8 py-3 rounded-full font-extrabold text-lg">
+    class="bg-yellow-400 text-black px-8 py-3 rounded-full font-extrabold text-lg
+           shadow-lg shadow-yellow-500/40">
     Open Ang Pao 🧧
   </button>
 </div>
@@ -83,7 +133,8 @@ body.no-scroll{overflow:hidden;touch-action:none}
 
 <div id="afterWin" class="hidden mt-4 text-center">
   <button id="downloadBtn"
-    class="bg-yellow-400 text-black px-6 py-2 rounded-full font-bold">
+    class="bg-yellow-400 text-black px-6 py-2 rounded-full font-bold
+           shadow-lg shadow-yellow-500/40">
     Download Winning Image 📥
   </button>
 </div>
@@ -105,13 +156,11 @@ const firebaseConfig={
 const app=initializeApp(firebaseConfig);
 const db=getFirestore(app);
 
-/* CONST */
 const PLACEHOLDER_IMG="https://png.pngtree.com/recommend-works/png-clipart/20250827/ourmid/pngtree-spring-festival-2026-year-of-the-horse-traditional-festival-golden-lunar-png-image_17142053.webp";
 
 let prize=null;
 let finished=false;
 let currentUserId="";
-let currentCompanyId="";
 
 /* RESET */
 function resetUI(msg){
@@ -122,47 +171,36 @@ function resetUI(msg){
 
 /* MAIN */
 openBtn.onclick=async()=>{
-  const uid=userId.value.trim();
+  const uid=String(userId.value).trim();
   if(!uid) return resetUI("Please enter ID");
   currentUserId=uid;
 
   openBtn.disabled=true;
   openBtn.textContent="Checking Luck...";
 
-  /* CHECK EXISTING WINNER */
   const winnerSnap=await getDocs(
     query(collection(db,"winners"), where("userId","==",uid))
   );
-
   if(!winnerSnap.empty){
     const win=winnerSnap.docs[0].data();
     await loadExistingWin(win);
     return;
   }
 
-  /* FIND COMPANY */
   const companySnap=await getDocs(collection(db,"companies"));
   let companyId=null;
-
   companySnap.docs.forEach(d=>{
-    if(d.data().ids?.includes(uid)) companyId=d.id;
+    (d.data().ids||[]).forEach(x=>{
+      if(String(x).trim()===uid) companyId=d.id;
+    });
   });
-
   if(!companyId) return resetUI("ID not found");
-  currentCompanyId=companyId;
 
-  /* GET PRIZES (STRICT COMPANY) */
-  const prizeSnap=await getDocs(
-    query(collection(db,"prizes"), where("companyId","==",companyId))
-  );
-
+  const prizeSnap=await getDocs(collection(db,"prizes"));
   const available=prizeSnap.docs
     .map(d=>({id:d.id,...d.data()}))
-    .filter(p=>(p.tickets?.length||0)<p.count);
-
-  if(!available.length){
-    return resetUI("No prizes available for your company");
-  }
+    .filter(p=>p.companyId===companyId && (p.tickets?.length||0)<p.count);
+  if(!available.length) return resetUI("No prizes available");
 
   prize=available[Math.floor(Math.random()*available.length)];
 
@@ -203,14 +241,11 @@ function initScratch(uid,companyId){
   function move(e){
     e.preventDefault();
     if(finished) return;
-
     const r=scratch.getBoundingClientRect();
     const t=e.touches?e.touches[0]:e;
     draw(t.clientX-r.left,t.clientY-r.top);
-
     const p=Math.floor(percent()*100);
     progressText.textContent="Luck Revealed: "+p+"%";
-
     if(p>=70){
       finished=true;
       reveal(uid,companyId);
@@ -221,20 +256,14 @@ function initScratch(uid,companyId){
   scratch.addEventListener("touchmove",move,{passive:false});
 }
 
-/* REVEAL NEW WIN */
+/* REVEAL */
 async function reveal(uid,companyId){
   await runTransaction(db,async tx=>{
-    const prizeRef=doc(db,"prizes",prize.id);
-    const snap=await tx.get(prizeRef);
-
-    if(snap.data().companyId!==companyId){
-      throw new Error("Company mismatch blocked");
-    }
-
+    const ref=doc(db,"prizes",prize.id);
+    const snap=await tx.get(ref);
     const tickets=snap.data().tickets||[];
     tickets.push(uid);
-    tx.update(prizeRef,{tickets});
-
+    tx.update(ref,{tickets});
     await addDoc(collection(db,"winners"),{
       userId:uid,
       prizeId:prize.id,
@@ -243,18 +272,16 @@ async function reveal(uid,companyId){
       timestamp:Date.now()
     });
   });
-
   showWin(prize);
 }
 
-/* LOAD EXISTING WIN */
+/* LOAD EXISTING */
 async function loadExistingWin(win){
-  const prizeDoc=await getDocs(
-    query(collection(db,"prizes"), where("__name__","==",win.prizeId))
-  );
-
-  prize={id:win.prizeId, ...prizeDoc.docs[0].data()};
-  showWin(prize);
+  const prizeSnap=await getDocs(collection(db,"prizes"));
+  const p=prizeSnap.docs
+    .map(d=>({id:d.id,...d.data()}))
+    .find(x=>x.id===win.prizeId);
+  if(p) showWin(p);
 }
 
 /* SHOW WIN */

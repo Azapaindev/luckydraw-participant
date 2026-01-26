@@ -11,10 +11,16 @@
 
 <style>
 html,body{
-  margin:0;height:100%;
+  margin:0;
+  height:100%;
   font-family:system-ui;
   background:radial-gradient(circle at top,#ff2d2d,#5a0000);
 }
+body.no-scroll{
+  overflow:hidden;
+  touch-action:none;
+}
+
 .card{
   width:320px;height:520px;
   border-radius:28px;
@@ -33,7 +39,12 @@ html,body{
 }
 .hidden{display:none}
 
-#scratch{position:absolute;inset:0;z-index:5}
+#scratch{
+  position:absolute;
+  inset:0;
+  z-index:5;
+  touch-action:none;
+}
 
 #prizeLayer{
   position:absolute;
@@ -61,17 +72,6 @@ html,body{
   color:#FFD700;
   z-index:7;
 }
-
-#downloadOverlay{
-  position:absolute;
-  bottom:14px;
-  left:0;right:0;
-  text-align:center;
-  font-size:14px;
-  font-weight:700;
-  color:#FFD700;
-  text-shadow:0 2px 6px rgba(0,0,0,.8);
-}
 </style>
 </head>
 
@@ -86,11 +86,6 @@ html,body{
 <div id="prizeLayer" class="center px-4">
   <img id="prizeImg" class="w-48 mb-4">
   <p id="prizeText" class="text-3xl font-extrabold text-yellow-300"></p>
-</div>
-
-<div id="downloadOverlay" class="hidden">
-  <div id="overlayUser"></div>
-  <div id="overlayPrize"></div>
 </div>
 
 <canvas id="scratch" class="hidden"></canvas>
@@ -176,6 +171,8 @@ openBtn.onclick=async()=>{
   scratch.classList.remove("hidden");
   progressText.classList.remove("hidden");
 
+  document.body.classList.add("no-scroll");
+
   initScratch(uid,company);
 };
 
@@ -202,10 +199,14 @@ function initScratch(uid,company){
   }
 
   function move(e){
+    e.preventDefault();
     if(finished) return;
+
     const r=scratch.getBoundingClientRect();
-    const x=(e.touches?e.touches[0].clientX:e.clientX)-r.left;
-    const y=(e.touches?e.touches[0].clientY:e.clientY)-r.top;
+    const t=e.touches?e.touches[0]:e;
+    const x=t.clientX-r.left;
+    const y=t.clientY-r.top;
+
     draw(x,y);
 
     const p=Math.floor(percent()*100);
@@ -218,7 +219,7 @@ function initScratch(uid,company){
   }
 
   scratch.addEventListener("mousemove",move);
-  scratch.addEventListener("touchmove",move,{passive:true});
+  scratch.addEventListener("touchmove",move,{passive:false});
 }
 
 async function reveal(uid,company){
@@ -239,14 +240,11 @@ async function reveal(uid,company){
 
   scratch.classList.add("hidden");
   progressText.classList.add("hidden");
+  document.body.classList.remove("no-scroll");
 
   prizeImg.src=prize.imageUrl;
   prizeText.textContent=prize.name;
   prizeLayer.classList.add("big");
-
-  overlayUser.textContent="User ID: "+currentUserId;
-  overlayPrize.textContent="Prize: "+prize.name;
-  downloadOverlay.classList.remove("hidden");
 
   afterWin.classList.remove("hidden");
 
@@ -259,7 +257,7 @@ async function reveal(uid,company){
 }
 
 downloadBtn.onclick=async()=>{
-  const canvas=await html2canvas(card,{backgroundColor:null,scale:2});
+  const canvas=await html2canvas(card,{scale:2});
   const link=document.createElement("a");
   link.download="ang-pao-"+currentUserId+".png";
   link.href=canvas.toDataURL("image/png");

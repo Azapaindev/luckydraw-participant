@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Ang Pao Lucky Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+<style>
+html,body{
+  margin:0;height:100%;
+  font-family:system-ui;
+  background:radial-gradient(circle at top,#ff2d2d,#5a0000);
+}
+.card{
+  width:320px;height:520px;
+  border-radius:28px;
+  background:linear-gradient(145deg,#b00000,#7a0000);
+  box-shadow:0 0 40px rgba(255,215,0,.6),0 25px 70px rgba(0,0,0,.7);
+  position:relative;
+  overflow:hidden;
+}
+.center{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  height:100%;
+  text-align:center;
+}
+.hidden{display:none}
+
+#scratch{position:absolute;inset:0;z-index:5}
+
+#prizeLayer{
+  position:absolute;
+  inset:0;
+  z-index:1;
+}
+#prizeLayer.big{
+  transform:scale(1.45);
+}
+
+#inputLayer{
+  position:absolute;
+  inset:0;
+  z-index:6;
+  background:rgba(0,0,0,.45);
+  backdrop-filter:blur(4px);
+}
+
+#progressText{
+  position:absolute;
+  bottom:12px;
+  left:0;right:0;
+  text-align:center;
+  font-weight:bold;
+  color:#FFD700;
+  z-index:7;
+}
+
+#downloadOverlay{
+  position:absolute;
+  bottom:14px;
+  left:0;right:0;
+  text-align:center;
+  font-size:14px;
+  font-weight:700;
+  color:#FFD700;
+  text-shadow:0 2px 6px rgba(0,0,0,.8);
+}
+</style>
+</head>
+
+<body class="flex items-center justify-center text-white">
+
+<div>
+<h1 class="text-2xl font-extrabold text-center mb-2">🧧 恭喜发财</h1>
+<p class="text-center text-yellow-300 mb-4">Scratch to reveal your luck</p>
+
+<div id="card" class="card">
+
+<div id="prizeLayer" class="center px-4">
+  <img id="prizeImg" class="w-48 mb-4">
+  <p id="prizeText" class="text-3xl font-extrabold text-yellow-300"></p>
+</div>
+
+<div id="downloadOverlay" class="hidden">
+  <div id="overlayUser"></div>
+  <div id="overlayPrize"></div>
+</div>
+
+<canvas id="scratch" class="hidden"></canvas>
+<div id="progressText" class="hidden">Luck Revealed: 0%</div>
+
+<div id="inputLayer" class="center px-6">
+  <input id="userId"
+    class="w-full p-3 rounded-full text-black text-center mb-4 font-semibold"
+    placeholder="Enter your ID">
+  <button id="openBtn"
+    class="bg-yellow-400 text-black px-8 py-3 rounded-full font-extrabold text-lg">
+    Open Ang Pao 🧧
+  </button>
+</div>
+
+</div>
+
+<div id="afterWin" class="hidden mt-4 text-center">
+  <button id="downloadBtn"
+    class="bg-yellow-400 text-black px-6 py-2 rounded-full font-bold">
+    Download Winning Image 📥
+  </button>
+</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+import {
+  getFirestore, collection, getDocs, addDoc,
+  doc, runTransaction, query, where
+} from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+
+const firebaseConfig={
+  apiKey:"AIzaSyAc53UEPP9_bz0W3iBmhghKROPL-FhsQCg",
+  authDomain:"luckydraw-oml.firebaseapp.com",
+  projectId:"luckydraw-oml"
+};
+const app=initializeApp(firebaseConfig);
+const db=getFirestore(app);
+
+const PLACEHOLDER_IMG="https://png.pngtree.com/recommend-works/png-clipart/20250827/ourmid/pngtree-spring-festival-2026-year-of-the-horse-traditional-festival-golden-lunar-png-image_17142053.webp";
+
+let prize=null;
+let finished=false;
+let currentUserId="";
+
+function resetUI(msg){
+  alert(msg);
+  openBtn.disabled=false;
+  openBtn.textContent="Open Ang Pao 🧧";
+}
+
+openBtn.onclick=async()=>{
+  const uid=userId.value.trim();
+  if(!uid) return resetUI("Please enter ID");
+  currentUserId=uid;
+
+  openBtn.disabled=true;
+  openBtn.textContent="Summoning Luck...";
+
+  const exist=await getDocs(query(collection(db,"winners"),where("userId","==",uid)));
+  if(!exist.empty) return resetUI("Already opened");
+
+  const companies=await getDocs(collection(db,"companies"));
+  let company=null;
+  companies.docs.forEach(d=>{
+    if(d.data().ids?.includes(uid)) company=d.id;
+  });
+  if(!company) return resetUI("ID not found");
+
+  const snap=await getDocs(collection(db,"prizes"));
+  const available=snap.docs
+    .map(d=>({id:d.id,...d.data()}))
+    .filter(p=>p.companyId===company && (p.tickets?.length||0)<p.count);
+  if(!available.length) return resetUI("No prizes left");
+
+  prize=available[Math.floor(Math.random()*available.length)];
+
+  prizeImg.src=PLACEHOLDER_IMG;
+  prizeText.textContent="Scratch to reveal";
+
+  inputLayer.classList.add("hidden");
+  scratch.classList.remove("hidden");
+  progressText.classList.remove("hidden");
+
+  initScratch(uid,company);
+};
+
+function initScratch(uid,company){
+  const ctx=scratch.getContext("2d",{willReadFrequently:true});
+  scratch.width=card.clientWidth;
+  scratch.height=card.clientHeight;
+
+  ctx.fillStyle="#d4af37";
+  ctx.fillRect(0,0,scratch.width,scratch.height);
+  ctx.globalCompositeOperation="destination-out";
+
+  function draw(x,y){
+    ctx.beginPath();
+    ctx.arc(x,y,38,0,Math.PI*2);
+    ctx.fill();
+  }
+
+  function percent(){
+    const d=ctx.getImageData(0,0,scratch.width,scratch.height).data;
+    let c=0;
+    for(let i=3;i<d.length;i+=4) if(d[i]===0) c++;
+    return c/(d.length/4);
+  }
+
+  function move(e){
+    if(finished) return;
+    const r=scratch.getBoundingClientRect();
+    const x=(e.touches?e.touches[0].clientX:e.clientX)-r.left;
+    const y=(e.touches?e.touches[0].clientY:e.clientY)-r.top;
+    draw(x,y);
+
+    const p=Math.floor(percent()*100);
+    progressText.textContent="Luck Revealed: "+p+"%";
+
+    if(p>=70){
+      finished=true;
+      reveal(uid,company);
+    }
+  }
+
+  scratch.addEventListener("mousemove",move);
+  scratch.addEventListener("touchmove",move,{passive:true});
+}
+
+async function reveal(uid,company){
+  await runTransaction(db,async tx=>{
+    const ref=doc(db,"prizes",prize.id);
+    const snap=await tx.get(ref);
+    const tickets=snap.data().tickets||[];
+    tickets.push(uid);
+    tx.update(ref,{tickets});
+    await addDoc(collection(db,"winners"),{
+      userId:uid,
+      prizeId:prize.id,
+      prizeName:prize.name,
+      companyId:company,
+      timestamp:Date.now()
+    });
+  });
+
+  scratch.classList.add("hidden");
+  progressText.classList.add("hidden");
+
+  prizeImg.src=prize.imageUrl;
+  prizeText.textContent=prize.name;
+  prizeLayer.classList.add("big");
+
+  overlayUser.textContent="User ID: "+currentUserId;
+  overlayPrize.textContent="Prize: "+prize.name;
+  downloadOverlay.classList.remove("hidden");
+
+  afterWin.classList.remove("hidden");
+
+  confetti({
+    particleCount:220,
+    spread:140,
+    colors:["#FFD700","#FFEC8B","#FFA500"],
+    origin:{y:0.6}
+  });
+}
+
+downloadBtn.onclick=async()=>{
+  const canvas=await html2canvas(card,{backgroundColor:null,scale:2});
+  const link=document.createElement("a");
+  link.download="ang-pao-"+currentUserId+".png";
+  link.href=canvas.toDataURL("image/png");
+  link.click();
+};
+</script>
+</body>
+</html>

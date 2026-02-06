@@ -7,7 +7,6 @@
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
 <style>
 html,body{
@@ -16,8 +15,6 @@ html,body{
   background:radial-gradient(circle at top,#ffcc4d,#7a0000);
 }
 body.no-scroll{overflow:hidden;touch-action:none}
-
-/* CARD */
 .card{
   width:320px;height:520px;
   border-radius:28px;
@@ -26,8 +23,6 @@ body.no-scroll{overflow:hidden;touch-action:none}
   position:relative;
   overflow:hidden;
 }
-
-/* COMMON */
 .center{
   display:flex;
   flex-direction:column;
@@ -37,25 +32,18 @@ body.no-scroll{overflow:hidden;touch-action:none}
   text-align:center;
 }
 .hidden{display:none}
-
 #scratch{position:absolute;inset:0;z-index:5;touch-action:none}
-
-/* PRIZE */
 #prizeLayer{position:absolute;inset:0;z-index:1}
 #prizeLayer.big{
   transform:scale(1.45);
   text-shadow:0 0 18px rgba(255,215,0,.9);
 }
-
-/* INPUT */
 #inputLayer{
   position:absolute;
   inset:0;
   z-index:6;
   background-color:#D42D20;
 }
-
-/* PROGRESS */
 #progressText{
   position:absolute;
   bottom:12px;
@@ -65,8 +53,6 @@ body.no-scroll{overflow:hidden;touch-action:none}
   color:#FFD700;
   z-index:7;
 }
-
-/* FIRECRACKERS */
 .firecracker{
   position:absolute;
   top:12px;
@@ -76,8 +62,6 @@ body.no-scroll{overflow:hidden;touch-action:none}
 }
 .firecracker.left{left:10px}
 .firecracker.right{right:10px}
-
-/* LION */
 #lion{
   width:280px;
   margin-top:-20px;
@@ -88,50 +72,51 @@ body.no-scroll{overflow:hidden;touch-action:none}
 
 <body class="flex items-center justify-center text-white">
 
+<audio id="bgSound" preload="auto" loop>
+  <source src="https://nvc71330-my.sharepoint.com/personal/darith_rin_vital_com_kh/_layouts/15/stream.aspx?id=%2Fpersonal%2Fdarith%5Frin%5Fvital%5Fcom%5Fkh%2FDocuments%2Fcny%2Emp3" type="audio/mpeg">
+</audio>
+
 <div>
-<h1 class="text-2xl font-extrabold text-center mb-1 text-yellow-300">🧧 恭喜发财</h1>
+<h1 class="text-3xl font-extrabold text-center mb-1 text-yellow-300">
+  Ang Pao Lucky Draw
+</h1>
 <p class="text-center text-yellow-200 mb-3">Scratch to reveal your luck</p>
 
 <div id="card" class="card">
 
 <div id="prizeLayer" class="center px-4">
+  <h2 id="congratsText"
+      class="text-lg font-semibold text-yellow-400 mb-1 hidden">
+    Congratulations!
+  </h2>
+  <p id="winnerIdText"
+     class="text-sm text-yellow-200 mb-2 hidden"></p>
   <img id="prizeImg" class="w-48 mb-4">
-  <p id="prizeText" class="text-3xl font-extrabold text-yellow-300"></p>
+  <p id="prizeText"
+     class="text-xl font-extrabold text-yellow-300"></p>
 </div>
 
 <canvas id="scratch" class="hidden"></canvas>
 <div id="progressText" class="hidden">Luck Revealed: 0%</div>
 
 <div id="inputLayer" class="center px-6">
-
   <img class="firecracker left"
     src="https://i.pinimg.com/originals/f2/28/49/f22849aa488dfefce7ac2a17b5b4d0d9.gif">
   <img class="firecracker right"
     src="https://i.pinimg.com/originals/f2/28/49/f22849aa488dfefce7ac2a17b5b4d0d9.gif">
-
   <img id="lion"
-    src="https://i.pinimg.com/originals/3f/c1/be/3fc1bef451c684ddcfb9f5bb98cd30f3.gif"
-    alt="Lion Dance">
+    src="https://i.pinimg.com/originals/3f/c1/be/3fc1bef451c684ddcfb9f5bb98cd30f3.gif">
 
   <input id="userId"
     class="w-full p-3 rounded-full text-black text-center mb-4 font-semibold"
     placeholder="Enter your ID">
 
   <button id="openBtn"
-    class="bg-yellow-400 text-black px-8 py-3 rounded-full font-extrabold text-lg
-           shadow-lg shadow-yellow-500/40">
-    Open Ang Pao 🧧
+    class="bg-yellow-400 text-black px-8 py-3 rounded-full font-extrabold text-lg">
+    Open Ang Pao
   </button>
 </div>
 
-</div>
-
-<div id="afterWin" class="hidden mt-4 text-center">
-  <button id="downloadBtn"
-    class="bg-yellow-400 text-black px-6 py-2 rounded-full font-bold
-           shadow-lg shadow-yellow-500/40">
-    Download Winning Image 📥
-  </button>
 </div>
 </div>
 
@@ -142,12 +127,12 @@ import {
   doc, runTransaction, query, where
 } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
-/* FIREBASE */
 const firebaseConfig={
   apiKey:"AIzaSyAc53UEPP9_bz0W3iBmhghKROPL-FhsQCg",
   authDomain:"luckydraw-oml.firebaseapp.com",
   projectId:"luckydraw-oml"
 };
+
 const app=initializeApp(firebaseConfig);
 const db=getFirestore(app);
 
@@ -156,73 +141,66 @@ const PLACEHOLDER_IMG="https://png.pngtree.com/recommend-works/png-clipart/20250
 let prize=null;
 let finished=false;
 let currentUserId="";
-
-/* RESET */
-function resetUI(msg){
-  alert(msg);
-  openBtn.disabled=false;
-  openBtn.textContent="Open Ang Pao 🧧";
-}
+let isExistingWinner=false;
 
 /* MAIN */
 openBtn.onclick=async()=>{
-  const uidRaw = userId.value.trim();
-  if(!uidRaw) return resetUI("Please enter ID");
-
-  const uidNum = Number(uidRaw);   // 🔑 normalize input
-  currentUserId = uidRaw;
+  const uid=userId.value.trim();
+  if(!uid) return alert("Please enter ID");
+  currentUserId=uid;
 
   openBtn.disabled=true;
   openBtn.textContent="Checking Luck...";
 
   const winnerSnap=await getDocs(
-    query(collection(db,"winners"), where("userId","==",uidRaw))
+    query(collection(db,"winners"), where("userId","==",uid))
   );
+
   if(!winnerSnap.empty){
+    isExistingWinner=true;
     const win=winnerSnap.docs[0].data();
-    await loadExistingWin(win);
+
+    const prizeSnap=await getDocs(collection(db,"prizes"));
+    prize=prizeSnap.docs.map(d=>({id:d.id,...d.data()}))
+      .find(p=>p.id===win.prizeId);
+
+    startScratch(win.companyId);
     return;
   }
 
   const companySnap=await getDocs(collection(db,"companies"));
   let companyId=null;
-
   companySnap.docs.forEach(d=>{
     (d.data().ids||[]).forEach(x=>{
-      if(Number(x) === uidNum){   // ✅ FIX HERE
-        companyId=d.id;
-      }
+      if(Number(x)===Number(uid)) companyId=d.id;
     });
   });
 
-  if(!companyId) return resetUI("ID not found");
+  if(!companyId) return alert("ID not found");
 
   const prizeSnap=await getDocs(collection(db,"prizes"));
-  const available=prizeSnap.docs
-    .map(d=>({id:d.id,...d.data()}))
+  const available=prizeSnap.docs.map(d=>({id:d.id,...d.data()}))
     .filter(p=>p.companyId===companyId && (p.tickets?.length||0)<p.count);
 
-  if(!available.length) return resetUI("No prizes available");
-
   prize=available[Math.floor(Math.random()*available.length)];
+  startScratch(companyId);
+};
 
+/* SCRATCH */
+function startScratch(companyId){
   prizeImg.src=PLACEHOLDER_IMG;
   prizeText.textContent="Scratch to reveal";
-
   inputLayer.classList.add("hidden");
   scratch.classList.remove("hidden");
   progressText.classList.remove("hidden");
   document.body.classList.add("no-scroll");
+  initScratch(currentUserId,companyId);
+}
 
-  initScratch(uidRaw,companyId);
-};
-
-/* SCRATCH */
 function initScratch(uid,companyId){
   const ctx=scratch.getContext("2d",{willReadFrequently:true});
   scratch.width=card.clientWidth;
   scratch.height=card.clientHeight;
-
   ctx.fillStyle="#d4af37";
   ctx.fillRect(0,0,scratch.width,scratch.height);
   ctx.globalCompositeOperation="destination-out";
@@ -240,8 +218,7 @@ function initScratch(uid,companyId){
     return c/(d.length/4);
   }
 
-  function move(e){
-    e.preventDefault();
+  scratch.onmousemove=scratch.ontouchmove=e=>{
     if(finished) return;
     const r=scratch.getBoundingClientRect();
     const t=e.touches?e.touches[0]:e;
@@ -252,20 +229,23 @@ function initScratch(uid,companyId){
       finished=true;
       reveal(uid,companyId);
     }
-  }
-
-  scratch.addEventListener("mousemove",move);
-  scratch.addEventListener("touchmove",move,{passive:false});
+  };
 }
 
 /* REVEAL */
 async function reveal(uid,companyId){
+  if(isExistingWinner){
+    showWin(prize);
+    return;
+  }
+
   await runTransaction(db,async tx=>{
     const ref=doc(db,"prizes",prize.id);
     const snap=await tx.get(ref);
     const tickets=snap.data().tickets||[];
     tickets.push(uid);
     tx.update(ref,{tickets});
+
     await addDoc(collection(db,"winners"),{
       userId:uid,
       prizeId:prize.id,
@@ -274,47 +254,32 @@ async function reveal(uid,companyId){
       timestamp:Date.now()
     });
   });
-  showWin(prize);
-}
 
-/* LOAD EXISTING */
-async function loadExistingWin(win){
-  const prizeSnap=await getDocs(collection(db,"prizes"));
-  const p=prizeSnap.docs
-    .map(d=>({id:d.id,...d.data()}))
-    .find(x=>x.id===win.prizeId);
-  if(p) showWin(p);
+  showWin(prize);
 }
 
 /* SHOW WIN */
 function showWin(p){
   scratch.classList.add("hidden");
   progressText.classList.add("hidden");
-  inputLayer.classList.add("hidden");
   document.body.classList.remove("no-scroll");
 
   prizeImg.src=p.imageUrl;
   prizeText.textContent=p.name;
+
+  congratsText.classList.remove("hidden");
+  winnerIdText.classList.remove("hidden");
+  winnerIdText.textContent="ID: " + currentUserId;
+
   prizeLayer.classList.add("big");
 
-  afterWin.classList.remove("hidden");
-
   confetti({
-    particleCount:220,
+    particleCount:200,
     spread:140,
-    colors:["#FFD700","#FFEC8B","#FFA500"],
     origin:{y:0.6}
   });
 }
-
-/* DOWNLOAD */
-downloadBtn.onclick=async()=>{
-  const canvas=await html2canvas(card,{scale:2});
-  const link=document.createElement("a");
-  link.download="ang-pao-"+currentUserId+".png";
-  link.href=canvas.toDataURL("image/png");
-  link.click();
-};
 </script>
+
 </body>
 </html>

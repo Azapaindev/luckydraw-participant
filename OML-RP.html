@@ -4,10 +4,8 @@
 <meta charset="UTF-8">
 <title>Ang Pao Lucky Game</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-
 <style>
 html,body{
   margin:0;height:100%;
@@ -35,7 +33,7 @@ body.no-scroll{overflow:hidden;touch-action:none}
 #scratch{position:absolute;inset:0;z-index:5;touch-action:none}
 #prizeLayer{position:absolute;inset:0;z-index:1}
 #prizeLayer.big{
-  transform:scale(1.45);
+  transform:scale(1.35);
   text-shadow:0 0 18px rgba(255,215,0,.9);
 }
 #inputLayer{
@@ -67,38 +65,42 @@ body.no-scroll{overflow:hidden;touch-action:none}
   margin-top:-20px;
   margin-bottom:10px;
 }
+
+/* Prize image - transparent background, rounded corners only */
+#prizeImg {
+  width: 200px;
+  height: 200px;
+  object-fit: contain;
+  object-position: center;
+  background: transparent;
+  border-radius: 16px;
+  margin: 8px 0;
+}
 </style>
 </head>
-
 <body class="flex items-center justify-center text-white">
-
 <audio id="bgSound" preload="auto" loop>
   <source src="https://nvc71330-my.sharepoint.com/personal/darith_rin_vital_com_kh/_layouts/15/stream.aspx?id=%2Fpersonal%2Fdarith%5Frin%5Fvital%5Fcom%5Fkh%2FDocuments%2Fcny%2Emp3" type="audio/mpeg">
 </audio>
-
 <div>
 <h1 class="text-3xl font-extrabold text-center mb-1 text-yellow-300">
   Ang Pao Lucky Draw
 </h1>
 <p class="text-center text-yellow-200 mb-3">Scratch to reveal your luck</p>
-
 <div id="card" class="card">
-
 <div id="prizeLayer" class="center px-4">
   <h2 id="congratsText"
       class="text-lg font-semibold text-yellow-400 mb-1 hidden">
     Congratulations!
   </h2>
   <p id="winnerIdText"
-     class="text-sm text-yellow-200 mb-2 hidden"></p>
-  <img id="prizeImg" class="w-48 mb-4">
+     class="text-sm text-yellow-200 mb-1 hidden"></p>
+  <img id="prizeImg" src="" alt="Prize">
   <p id="prizeText"
-     class="text-xl font-extrabold text-yellow-300"></p>
+     class="text-xl font-extrabold text-yellow-300 mt-3"></p>
 </div>
-
 <canvas id="scratch" class="hidden"></canvas>
 <div id="progressText" class="hidden">Luck Revealed: 0%</div>
-
 <div id="inputLayer" class="center px-6">
   <img class="firecracker left"
     src="https://i.pinimg.com/originals/f2/28/49/f22849aa488dfefce7ac2a17b5b4d0d9.gif">
@@ -106,17 +108,14 @@ body.no-scroll{overflow:hidden;touch-action:none}
     src="https://i.pinimg.com/originals/f2/28/49/f22849aa488dfefce7ac2a17b5b4d0d9.gif">
   <img id="lion"
     src="https://i.pinimg.com/originals/3f/c1/be/3fc1bef451c684ddcfb9f5bb98cd30f3.gif">
-
   <input id="userId"
     class="w-full p-3 rounded-full text-black text-center mb-4 font-semibold"
     placeholder="Enter your ID">
-
   <button id="openBtn"
     class="bg-yellow-400 text-black px-8 py-3 rounded-full font-extrabold text-lg">
     Open Ang Pao
   </button>
 </div>
-
 </div>
 </div>
 
@@ -132,7 +131,6 @@ const firebaseConfig={
   authDomain:"luckydraw-oml.firebaseapp.com",
   projectId:"luckydraw-oml"
 };
-
 const app=initializeApp(firebaseConfig);
 const db=getFirestore(app);
 
@@ -148,7 +146,6 @@ openBtn.onclick=async()=>{
   const uid=userId.value.trim();
   if(!uid) return alert("Please enter ID");
   currentUserId=uid;
-
   openBtn.disabled=true;
   openBtn.textContent="Checking Luck...";
 
@@ -159,11 +156,9 @@ openBtn.onclick=async()=>{
   if(!winnerSnap.empty){
     isExistingWinner=true;
     const win=winnerSnap.docs[0].data();
-
     const prizeSnap=await getDocs(collection(db,"prizes"));
     prize=prizeSnap.docs.map(d=>({id:d.id,...d.data()}))
       .find(p=>p.id===win.prizeId);
-
     startScratch(win.companyId);
     return;
   }
@@ -245,7 +240,6 @@ async function reveal(uid,companyId){
     const tickets=snap.data().tickets||[];
     tickets.push(uid);
     tx.update(ref,{tickets});
-
     await addDoc(collection(db,"winners"),{
       userId:uid,
       prizeId:prize.id,
@@ -264,9 +258,8 @@ function showWin(p){
   progressText.classList.add("hidden");
   document.body.classList.remove("no-scroll");
 
-  prizeImg.src=p.imageUrl;
+  prizeImg.src = p.imageUrl || PLACEHOLDER_IMG;
   prizeText.textContent=p.name;
-
   congratsText.classList.remove("hidden");
   winnerIdText.classList.remove("hidden");
   winnerIdText.textContent="ID: " + currentUserId;
@@ -280,6 +273,5 @@ function showWin(p){
   });
 }
 </script>
-
 </body>
 </html>

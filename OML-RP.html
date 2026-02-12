@@ -34,7 +34,7 @@ body.no-scroll{overflow:hidden;touch-action:none}
 #scratch{position:absolute;inset:0;z-index:5;touch-action:none}
 #prizeLayer{position:absolute;inset:0;z-index:1}
 #prizeLayer.big{
-  transform:scale(1.35);
+  transform:scale(1.25);
   text-shadow:0 0 18px rgba(255,215,0,.9);
 }
 #inputLayer{
@@ -75,6 +75,48 @@ body.no-scroll{overflow:hidden;touch-action:none}
   border-radius: 16px;
   margin: 8px 0;
 }
+
+/* ── Prize name styling ──────────────────────────────────────── */
+#prizeText {
+  font-weight: 800;
+  color: #fef08a;               /* yellow-200-ish */
+  text-align: center;
+  padding: 0 12px;
+  margin: 8px auto 0;
+  max-width: 280px;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  line-height: 1.3;
+}
+
+/* Default size */
+#prizeText {
+  font-size: 1.375rem;          /* ~22px */
+}
+
+/* Medium-long names */
+#prizeText.long {
+  font-size: 1.2rem;            /* ~19px */
+  line-height: 1.28;
+}
+
+/* Very long names */
+#prizeText.very-long {
+  font-size: 1.05rem;           /* ~16.8px */
+  line-height: 1.25;
+}
+
+/* Extra safety for tiny screens */
+@media (max-width: 360px) {
+  #prizeText {
+    font-size: 1.125rem;
+  }
+  #prizeText.long,
+  #prizeText.very-long {
+    font-size: 1rem;
+  }
+}
 </style>
 </head>
 <body class="flex items-center justify-center text-white">
@@ -98,8 +140,7 @@ body.no-scroll{overflow:hidden;touch-action:none}
     <p id="winnerIdText"
        class="text-sm text-yellow-200 mb-1 hidden"></p>
     <img id="prizeImg" src="" alt="Prize">
-    <p id="prizeText"
-       class="text-xl font-extrabold text-yellow-300 mt-3"></p>
+    <p id="prizeText"></p>
   </div>
 
   <canvas id="scratch" class="hidden"></canvas>
@@ -164,7 +205,6 @@ openBtn.onclick = async () => {
   openBtn.disabled = true;
   openBtn.textContent = "Checking...";
 
-  // Check if already won (normalized ID)
   const winnerSnap = await getDocs(
     query(collection(db, "winners"), where("userId", "==", normalized))
   );
@@ -173,7 +213,6 @@ openBtn.onclick = async () => {
     isExistingWinner = true;
     const win = winnerSnap.docs[0].data();
 
-    // Get prize using prizeId (recommended field)
     if (win.prizeId) {
       const prizeRef = doc(db, "prizes", win.prizeId);
       const prizeSnap = await getDoc(prizeRef);
@@ -184,13 +223,11 @@ openBtn.onclick = async () => {
       }
     }
 
-    // Fallback (if prizeId not saved previously)
     alert("You already won, but prize details could not be loaded.");
     resetButton();
     return;
   }
 
-  // Find company
   const companySnap = await getDocs(collection(db, "companies"));
   let companyId = null;
 
@@ -209,7 +246,6 @@ openBtn.onclick = async () => {
     return;
   }
 
-  // Get available prizes
   const prizeSnap = await getDocs(collection(db, "prizes"));
   const available = prizeSnap.docs
     .map(d => ({ id: d.id, ...d.data() }))
@@ -291,7 +327,7 @@ async function reveal(uid, companyId) {
       if (!snap.exists()) throw new Error("Prize disappeared");
 
       const tickets = snap.data().tickets || [];
-      if (tickets.includes(uid)) throw new Error("Already taken"); // extra safety
+      if (tickets.includes(uid)) throw new Error("Already taken");
 
       tickets.push(uid);
       tx.update(ref, { tickets });
@@ -320,7 +356,19 @@ function showWin(p) {
   document.body.classList.remove("no-scroll");
 
   prizeImg.src = p.imageUrl || PLACEHOLDER_IMG;
+
+  // Set text and adjust size based on length
   prizeText.textContent = p.name;
+
+  prizeText.classList.remove("long", "very-long");
+
+  const len = p.name.length;
+  if (len > 28) {
+    prizeText.classList.add("very-long");
+  } else if (len > 20) {
+    prizeText.classList.add("long");
+  }
+
   congratsText.classList.remove("hidden");
   winnerIdText.classList.remove("hidden");
   winnerIdText.textContent = "ID: " + currentUserId;

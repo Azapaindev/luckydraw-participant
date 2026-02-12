@@ -75,7 +75,6 @@ body.no-scroll{overflow:hidden;touch-action:none}
   border-radius: 16px;
   margin: 8px 0;
 }
-/* ── Prize name styling ──────────────────────────────────────── */
 #prizeText {
   font-weight: 800;
   color: #fef08a;
@@ -96,7 +95,6 @@ body.no-scroll{overflow:hidden;touch-action:none}
   #prizeText.long,
   #prizeText.very-long { font-size: 1rem; }
 }
-/* Add transition for smooth appearance */
 #instructionText {
   transition: opacity 0.5s ease;
 }
@@ -104,8 +102,7 @@ body.no-scroll{overflow:hidden;touch-action:none}
 </head>
 <body class="flex items-center justify-center text-white">
 
-<!-- Updated music URL -->
-<audio id="bgSound" preload="auto" loop autoplay playsinline>
+<audio id="bgSound" preload="auto" loop playsinline>
   <source src="https://raw.githubusercontent.com/Azapaindev/luckydraw-participant/refs/heads/main/CNY%202026/viacheslavstarostin-chinese-lunar-new-year-465871.mp3" type="audio/mpeg">
   Your browser does not support the audio element.
 </audio>
@@ -115,19 +112,16 @@ body.no-scroll{overflow:hidden;touch-action:none}
   អាំងប៉ាវ គ្រួសារ រ័ន ម៉រ
 </h1>
 
-<!-- Khmer instruction - hidden at start -->
 <p id="instructionText" class="text-center text-yellow-200 mb-4 text-lg font-medium opacity-0 hidden">
   កោសដើម្បីបង្ហាញសំណាងរបស់អ្នក
 </p>
 
 <div id="card" class="card">
   <div id="prizeLayer" class="center px-4">
-    <h2 id="congratsText"
-        class="text-lg font-semibold text-yellow-400 mb-1 hidden">
+    <h2 id="congratsText" class="text-lg font-semibold text-yellow-400 mb-1 hidden">
       Congratulations!
     </h2>
-    <p id="winnerIdText"
-       class="text-sm text-yellow-200 mb-1 hidden"></p>
+    <p id="winnerIdText" class="text-sm text-yellow-200 mb-1 hidden"></p>
     <img id="prizeImg" src="" alt="Prize">
     <p id="prizeText"></p>
   </div>
@@ -182,6 +176,24 @@ function normalizeId(raw) {
   return digits.padStart(6, '0');
 }
 
+// Try to start music very early + on first interaction
+const audio = document.getElementById('bgSound');
+
+function tryPlayAudio() {
+  if (audio) {
+    audio.play()
+      .then(() => console.log("Music started"))
+      .catch(e => console.log("Autoplay blocked:", e.message));
+  }
+}
+
+// Attempt immediately
+tryPlayAudio();
+
+// Also try on any user interaction (click, touch, etc.)
+document.addEventListener('touchstart', tryPlayAudio, { once: true });
+document.addEventListener('click', tryPlayAudio, { once: true });
+
 /* MAIN */
 openBtn.onclick = async () => {
   let input = userId.value.trim();
@@ -193,6 +205,9 @@ openBtn.onclick = async () => {
   currentUserId = normalized;
   openBtn.disabled = true;
   openBtn.textContent = "Checking...";
+
+  // Try to play again when user clicks the button (very high chance on mobile)
+  tryPlayAudio();
 
   const winnerSnap = await getDocs(
     query(collection(db, "winners"), where("userId", "==", normalized))
@@ -273,6 +288,7 @@ function startScratch(companyId) {
   initScratch(currentUserId, companyId);
 }
 
+// ... (rest of the code remains the same: initScratch, reveal, showWin functions)
 function initScratch(uid, companyId) {
   const ctx = scratch.getContext("2d", { willReadFrequently: true });
   scratch.width = card.clientWidth;
@@ -308,7 +324,6 @@ function initScratch(uid, companyId) {
   };
 }
 
-/* REVEAL */
 async function reveal(uid, companyId) {
   if (isExistingWinner) {
     showWin(prize);
@@ -344,7 +359,6 @@ async function reveal(uid, companyId) {
   }
 }
 
-/* SHOW WIN */
 function showWin(p) {
   scratch.classList.add("hidden");
   progressText.classList.add("hidden");
@@ -379,17 +393,6 @@ function showWin(p) {
     origin: { y: 0.6 }
   });
 }
-
-// Attempt to play music on first user interaction (mobile browsers require this)
-document.addEventListener('click', function playOnInteraction() {
-  const audio = document.getElementById('bgSound');
-  if (audio) {
-    audio.play().catch(e => console.log("Autoplay prevented:", e));
-  }
-  // Remove listener after first click
-  document.removeEventListener('click', playOnInteraction);
-}, { once: true });
-
 </script>
 </body>
 </html>

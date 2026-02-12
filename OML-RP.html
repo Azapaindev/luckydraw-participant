@@ -91,13 +91,11 @@ body.no-scroll{overflow:hidden;touch-action:none}
 #prizeText { font-size: 1.375rem; }
 #prizeText.long { font-size: 1.2rem; line-height: 1.28; }
 #prizeText.very-long { font-size: 1.05rem; line-height: 1.25; }
-
 @media (max-width: 360px) {
   #prizeText { font-size: 1.125rem; }
   #prizeText.long,
   #prizeText.very-long { font-size: 1rem; }
 }
-
 /* Add transition for smooth appearance */
 #instructionText {
   transition: opacity 0.5s ease;
@@ -106,8 +104,10 @@ body.no-scroll{overflow:hidden;touch-action:none}
 </head>
 <body class="flex items-center justify-center text-white">
 
-<audio id="bgSound" preload="auto" loop>
-  <source src="https://nvc71330-my.sharepoint.com/personal/darith_rin_vital_com_kh/_layouts/15/stream.aspx?id=%2Fpersonal%2Fdarith%5Frin%5Fvital%5Fcom%5Fkh%2FDocuments%2Fcny%2Emp3" type="audio/mpeg">
+<!-- Updated music URL -->
+<audio id="bgSound" preload="auto" loop autoplay playsinline>
+  <source src="https://raw.githubusercontent.com/Azapaindev/luckydraw-participant/refs/heads/main/CNY%202026/viacheslavstarostin-chinese-lunar-new-year-465871.mp3" type="audio/mpeg">
+  Your browser does not support the audio element.
 </audio>
 
 <div>
@@ -260,10 +260,8 @@ function startScratch(companyId) {
   prizeImg.src = PLACEHOLDER_IMG;
   prizeText.textContent = "Scratch to reveal";
 
-  // Show Khmer instruction
   const instr = document.getElementById("instructionText");
   instr.classList.remove("hidden");
-  // Force visibility (sometimes Tailwind hidden needs extra push)
   instr.style.display = "block";
   instr.style.opacity = "1";
 
@@ -352,7 +350,6 @@ function showWin(p) {
   progressText.classList.add("hidden");
   document.body.classList.remove("no-scroll");
 
-  // Hide instruction again
   const instr = document.getElementById("instructionText");
   instr.style.opacity = "0";
   setTimeout(() => {
@@ -382,6 +379,17 @@ function showWin(p) {
     origin: { y: 0.6 }
   });
 }
+
+// Attempt to play music on first user interaction (mobile browsers require this)
+document.addEventListener('click', function playOnInteraction() {
+  const audio = document.getElementById('bgSound');
+  if (audio) {
+    audio.play().catch(e => console.log("Autoplay prevented:", e));
+  }
+  // Remove listener after first click
+  document.removeEventListener('click', playOnInteraction);
+}, { once: true });
+
 </script>
 </body>
 </html>

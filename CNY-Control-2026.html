@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Ang Pao Claim Page</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+body{
+  background:#0f172a;
+  color:white;
+  font-family:system-ui;
+}
+.card{
+  background:#020617;
+  border-radius:12px;
+  padding:20px;
+}
+input{
+  background:white !important;
+  color:black !important;
+}
+</style>
+</head>
+
+<body class="p-6 max-w-xl mx-auto">
+
+<h1 class="text-3xl font-bold mb-6">🎁 Customer Claim</h1>
+
+<div class="card space-y-4">
+
+  <input id="claimId" placeholder="Enter Winner ID"
+    class="p-3 rounded w-full">
+
+  <button onclick="checkWinner()"
+    class="bg-yellow-400 text-black font-bold px-4 py-2 rounded w-full">
+    Check ID
+  </button>
+
+  <div id="resultBox" class="mt-4"></div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  query,
+  where,
+  updateDoc,
+  doc,
+  getDoc
+} from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAc53UEPP9_bz0W3iBmhghKROPL-FhsQCg",
+  authDomain: "luckydraw-oml.firebaseapp.com",
+  projectId: "luckydraw-oml"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const DEFAULT_IMG = "https://www.pngarts.com/files/3/Money-PNG-Image.png";
+
+window.checkWinner = async () => {
+  const id = document.getElementById("claimId").value.trim();
+  const resultBox = document.getElementById("resultBox");
+
+  if (!id) {
+    alert("Enter Winner ID");
+    return;
+  }
+
+  resultBox.innerHTML = '<div class="text-gray-400">Checking...</div>';
+
+  const q = query(collection(db, "winners"), where("userId", "==", id));
+  const snap = await getDocs(q);
+
+  if (snap.empty) {
+    resultBox.innerHTML = `<div class="text-red-400 font-bold">❌ ID not found</div>`;
+    return;
+  }
+
+  const winnerDoc = snap.docs[0];
+  const w = winnerDoc.data();
+
+  // Try to get prize image
+  let imageUrl = DEFAULT_IMG;
+
+  // Preferred: if prizeId was saved when winner was created
+  if (w.prizeId) {
+    const prizeRef = doc(db, "prizes", w.prizeId);
+    const prizeSnap = await getDoc(prizeRef);
+    if (prizeSnap.exists()) {
+      imageUrl = prizeSnap.data().imageUrl || DEFAULT_IMG;
+    }
+  }
+  // Fallback: try to match by name (may pick wrong one if duplicate names)
+  else if (w.prizeName) {
+    const prizeQuery = query(collection(db, "prizes"), where("name", "==", w.prizeName));
+    const prizeSnap = await getDocs(prizeQuery);
+    if (!prizeSnap.empty) {
+      imageUrl = prizeSnap.docs[0].data().imageUrl || DEFAULT_IMG;
+    }
+  }
+
+  if (w.claimed) {
+    resultBox.innerHTML = `
+      <div class="bg-red-600 p-4 rounded text-white font-bold text-center">
+        ⚠️ Already Claimed<br>
+        <div class="my-3 text-lg">${w.prizeName}</div>
+        <img src="${imageUrl}" class="mx-auto max-h-48 object-contain rounded" alt="prize">
+      </div>`;
+  } else {
+    resultBox.innerHTML = `
+      <div class="bg-green-600 p-5 rounded text-white">
+        <div class="font-bold text-xl mb-3 text-center">🎉 Winner Found!</div>
+        <div class="text-lg mb-2">Item: <strong>${w.prizeName}</strong></div>
+        <img src="${imageUrl}" class="mx-auto max-h-64 object-contain rounded mb-4 border-2 border-yellow-400" alt="prize image">
+        <button onclick="confirmClaim('${winnerDoc.id}')"
+          class="bg-black text-yellow-300 font-bold px-6 py-3 rounded w-full text-lg">
+          Confirm Claim
+        </button>
+      </div>`;
+  }
+};
+
+window.confirmClaim = async (docId) => {
+  if (!confirm("Confirm this prize has been claimed?")) return;
+
+  await updateDoc(doc(db, "winners", docId), {
+    claimed: true,
+    claimTime: Date.now()
+  });
+
+  alert("Claim Successful ✅");
+  document.getElementById("claimId").value = "";
+  document.getElementById("resultBox").innerHTML = "";
+};
+</script>
+
+</body>
+</html>

@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-
 <style>
 html,body{
   margin:0;height:100%;
@@ -101,21 +100,17 @@ body.no-scroll{overflow:hidden;touch-action:none}
 </style>
 </head>
 <body class="flex items-center justify-center text-white">
-
 <audio id="bgSound" preload="auto" loop playsinline>
   <source src="https://raw.githubusercontent.com/Azapaindev/luckydraw-participant/refs/heads/main/CNY%202026/viacheslavstarostin-chinese-lunar-new-year-465871.mp3" type="audio/mpeg">
   Your browser does not support the audio element.
 </audio>
-
 <div>
 <h1 class="text-3xl font-extrabold text-center mb-6 text-yellow-300">
   🧧អាំងប៉ាវ គ្រួសារ រ័ន ម៉រ🧧
 </h1>
-
 <p id="instructionText" class="text-center text-yellow-200 mb-4 text-lg font-medium opacity-0 hidden">
   កោសរកលាបសំណាង
 </p>
-
 <div id="card" class="card">
   <div id="prizeLayer" class="center px-4">
     <h2 id="congratsText" class="text-lg font-semibold text-yellow-400 mb-1 hidden">
@@ -125,11 +120,8 @@ body.no-scroll{overflow:hidden;touch-action:none}
     <img id="prizeImg" src="" alt="Prize">
     <p id="prizeText"></p>
   </div>
-
   <canvas id="scratch" class="hidden"></canvas>
-
   <div id="progressText" class="hidden">Luck Revealed: 0%</div>
-
   <div id="inputLayer" class="center px-6">
     <img class="firecracker left"
       src="https://i.pinimg.com/originals/f2/28/49/f22849aa488dfefce7ac2a17b5b4d0d9.gif">
@@ -152,7 +144,8 @@ body.no-scroll{overflow:hidden;touch-action:none}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
 import {
   getFirestore, collection, getDocs, addDoc,
-  doc, runTransaction, query, where, getDoc
+  doc, runTransaction, query, where, getDoc,
+  arrayUnion
 } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -160,6 +153,7 @@ const firebaseConfig = {
   authDomain: "luckydraw-oml.firebaseapp.com",
   projectId: "luckydraw-oml"
 };
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
@@ -169,6 +163,7 @@ let prize = null;
 let finished = false;
 let currentUserId = "";
 let isExistingWinner = false;
+let isProcessing = false; // ← NEW: prevent parallel reveals
 
 function normalizeId(raw) {
   const digits = String(raw).replace(/\D/g, '');
@@ -176,39 +171,33 @@ function normalizeId(raw) {
   return digits.padStart(6, '0');
 }
 
-// Try to start music very early + on first interaction
+// Audio handling
 const audio = document.getElementById('bgSound');
-
 function tryPlayAudio() {
-  if (audio) {
-    audio.play()
-      .then(() => console.log("Music started"))
-      .catch(e => console.log("Autoplay blocked:", e.message));
-  }
+  audio?.play().catch(() => {});
 }
-
-// Attempt immediately
 tryPlayAudio();
-
-// Also try on any user interaction (click, touch, etc.)
 document.addEventListener('touchstart', tryPlayAudio, { once: true });
 document.addEventListener('click', tryPlayAudio, { once: true });
 
-/* MAIN */
-openBtn.onclick = async () => {
-  let input = userId.value.trim();
+/* MAIN BUTTON */
+document.getElementById("openBtn").onclick = async () => {
+  if (isProcessing) return;
+
+  let input = document.getElementById("userId").value.trim();
   if (!input) return alert("Please enter ID");
 
   const normalized = normalizeId(input);
   if (!normalized) return alert("Invalid ID – please use numbers only");
 
   currentUserId = normalized;
+  const openBtn = document.getElementById("openBtn");
   openBtn.disabled = true;
   openBtn.textContent = "Checking...";
 
-  // Try to play again when user clicks the button (very high chance on mobile)
   tryPlayAudio();
 
+  // Check if already won
   const winnerSnap = await getDocs(
     query(collection(db, "winners"), where("userId", "==", normalized))
   );
@@ -216,7 +205,6 @@ openBtn.onclick = async () => {
   if (!winnerSnap.empty) {
     isExistingWinner = true;
     const win = winnerSnap.docs[0].data();
-
     if (win.prizeId) {
       const prizeRef = doc(db, "prizes", win.prizeId);
       const prizeSnap = await getDoc(prizeRef);
@@ -226,19 +214,17 @@ openBtn.onclick = async () => {
         return;
       }
     }
-
     alert("You already won, but prize details could not be loaded.");
     resetButton();
     return;
   }
 
+  // Find company
   const companySnap = await getDocs(collection(db, "companies"));
   let companyId = null;
-
   for (const docSnap of companySnap.docs) {
     const ids = docSnap.data().ids || [];
-    const match = ids.some(stored => normalizeId(stored) === normalized);
-    if (match) {
+    if (ids.some(stored => normalizeId(stored) === normalized)) {
       companyId = docSnap.id;
       break;
     }
@@ -250,6 +236,7 @@ openBtn.onclick = async () => {
     return;
   }
 
+  // Get available prizes
   const prizeSnap = await getDocs(collection(db, "prizes"));
   const available = prizeSnap.docs
     .map(d => ({ id: d.id, ...d.data() }))
@@ -266,35 +253,37 @@ openBtn.onclick = async () => {
 };
 
 function resetButton() {
-  openBtn.disabled = false;
-  openBtn.textContent = "Open Ang Pao";
+  const btn = document.getElementById("openBtn");
+  btn.disabled = false;
+  btn.textContent = "ចុចបើកអាំងប៉ាវ";
 }
 
-/* SCRATCH */
+/* SCRATCH CARD */
 function startScratch(companyId) {
-  prizeImg.src = PLACEHOLDER_IMG;
-  prizeText.textContent = "Scratch to reveal";
+  document.getElementById("prizeImg").src = PLACEHOLDER_IMG;
+  document.getElementById("prizeText").textContent = "Scratch to reveal";
 
   const instr = document.getElementById("instructionText");
   instr.classList.remove("hidden");
-  instr.style.display = "block";
   instr.style.opacity = "1";
 
-  inputLayer.classList.add("hidden");
-  scratch.classList.remove("hidden");
-  progressText.classList.remove("hidden");
+  document.getElementById("inputLayer").classList.add("hidden");
+  document.getElementById("scratch").classList.remove("hidden");
+  document.getElementById("progressText").classList.remove("hidden");
   document.body.classList.add("no-scroll");
 
   initScratch(currentUserId, companyId);
 }
 
-// ... (rest of the code remains the same: initScratch, reveal, showWin functions)
 function initScratch(uid, companyId) {
-  const ctx = scratch.getContext("2d", { willReadFrequently: true });
-  scratch.width = card.clientWidth;
-  scratch.height = card.clientHeight;
+  const canvas = document.getElementById("scratch");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+
+  canvas.width = document.getElementById("card").clientWidth;
+  canvas.height = document.getElementById("card").clientHeight;
+
   ctx.fillStyle = "#d4af37";
-  ctx.fillRect(0, 0, scratch.width, scratch.height);
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.globalCompositeOperation = "destination-out";
 
   function draw(x, y) {
@@ -303,45 +292,72 @@ function initScratch(uid, companyId) {
     ctx.fill();
   }
 
-  function percent() {
-    const d = ctx.getImageData(0, 0, scratch.width, scratch.height).data;
-    let c = 0;
-    for (let i = 3; i < d.length; i += 4) if (d[i] === 0) c++;
-    return c / (d.length / 4);
+  function getRevealedPercent() {
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    let count = 0;
+    for (let i = 3; i < data.length; i += 4) {
+      if (data[i] === 0) count++;
+    }
+    return count / (data.length / 4);
   }
 
-  scratch.onmousemove = scratch.ontouchmove = e => {
-    if (finished) return;
-    const r = scratch.getBoundingClientRect();
-    const t = e.touches ? e.touches[0] : e;
-    draw(t.clientX - r.left, t.clientY - r.top);
-    const p = Math.floor(percent() * 100);
-    progressText.textContent = "Luck Revealed: " + p + "%";
-    if (p >= 70) {
+  const moveHandler = (e) => {
+    if (finished || isProcessing) return;
+    e.preventDefault();
+
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+
+    draw(x, y);
+
+    const percent = Math.floor(getRevealedPercent() * 100);
+    document.getElementById("progressText").textContent = `Luck Revealed: ${percent}%`;
+
+    if (percent >= 70) {
       finished = true;
+      canvas.style.pointerEvents = "none"; // ← prevent more scratching
       reveal(uid, companyId);
     }
   };
+
+  canvas.onmousemove = moveHandler;
+  canvas.ontouchmove = moveHandler;
 }
 
 async function reveal(uid, companyId) {
+  if (isProcessing) return;
+  isProcessing = true;
+
   if (isExistingWinner) {
     showWin(prize);
+    isProcessing = false;
     return;
   }
 
   try {
-    await runTransaction(db, async tx => {
-      const ref = doc(db, "prizes", prize.id);
-      const snap = await tx.get(ref);
-      if (!snap.exists()) throw new Error("Prize disappeared");
+    await runTransaction(db, async (tx) => {
+      const prizeRef = doc(db, "prizes", prize.id);
+      const snap = await tx.get(prizeRef);
 
-      const tickets = snap.data().tickets || [];
-      if (tickets.includes(uid)) throw new Error("Already taken");
+      if (!snap.exists()) {
+        throw new Error("Prize no longer exists");
+      }
 
-      tickets.push(uid);
-      tx.update(ref, { tickets });
+      const data = snap.data();
+      const tickets = data.tickets || [];
 
+      // Defensive check (extra safety)
+      if (tickets.includes(uid)) {
+        throw new Error("This prize was already claimed");
+      }
+
+      // Main update – use arrayUnion (safe & idempotent)
+      tx.update(prizeRef, {
+        tickets: arrayUnion(uid)
+      });
+
+      // Record winner
       await addDoc(collection(db, "winners"), {
         userId: uid,
         prizeId: prize.id,
@@ -353,39 +369,42 @@ async function reveal(uid, companyId) {
 
     showWin(prize);
   } catch (err) {
-    console.error(err);
-    alert("Sorry, there was a problem claiming your prize. Please try again or contact support.");
+    console.error("Reveal error:", err);
+
+    let msg = "Sorry, there was a problem claiming your prize.";
+    if (err.message?.includes("already claimed") || err.code === "failed-precondition") {
+      msg = "This prize was already claimed (possibly opened in another tab).";
+    }
+    alert(msg);
     resetButton();
+  } finally {
+    isProcessing = false;
   }
 }
 
 function showWin(p) {
-  scratch.classList.add("hidden");
-  progressText.classList.add("hidden");
+  document.getElementById("scratch").classList.add("hidden");
+  document.getElementById("progressText").classList.add("hidden");
   document.body.classList.remove("no-scroll");
 
   const instr = document.getElementById("instructionText");
   instr.style.opacity = "0";
-  setTimeout(() => {
-    instr.classList.add("hidden");
-  }, 500);
+  setTimeout(() => instr.classList.add("hidden"), 500);
 
-  prizeImg.src = p.imageUrl || PLACEHOLDER_IMG;
+  document.getElementById("prizeImg").src = p.imageUrl || PLACEHOLDER_IMG;
+  document.getElementById("prizeText").textContent = p.name;
 
-  prizeText.textContent = p.name;
-  prizeText.classList.remove("long", "very-long");
   const len = p.name.length;
-  if (len > 28) {
-    prizeText.classList.add("very-long");
-  } else if (len > 20) {
-    prizeText.classList.add("long");
-  }
+  const prizeTextEl = document.getElementById("prizeText");
+  prizeTextEl.classList.remove("long", "very-long");
+  if (len > 28) prizeTextEl.classList.add("very-long");
+  else if (len > 20) prizeTextEl.classList.add("long");
 
-  congratsText.classList.remove("hidden");
-  winnerIdText.classList.remove("hidden");
-  winnerIdText.textContent = "ID: " + currentUserId;
+  document.getElementById("congratsText").classList.remove("hidden");
+  document.getElementById("winnerIdText").classList.remove("hidden");
+  document.getElementById("winnerIdText").textContent = "ID: " + currentUserId;
 
-  prizeLayer.classList.add("big");
+  document.getElementById("prizeLayer").classList.add("big");
 
   confetti({
     particleCount: 200,

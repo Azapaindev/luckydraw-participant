@@ -1,73 +1,319 @@
 <!DOCTYPE html>
-<html lang='en'>
+<html lang="en">
 <head>
-<meta charset='UTF-8'>
-<meta name='viewport' content='width=device-width, initial-scale=1.0'>
-<title>Lucky Draw Participant</title>
-<script src='https://cdn.tailwindcss.com'></script>
-<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-<script type='module'>
+  <meta charset="UTF-8">
+  <title>Ang Pao Lucky Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      font-family: system-ui;
+      background: radial-gradient(circle at top, #ffcc4d, #7a0000);
+    }
+    body.no-scroll {
+      overflow: hidden;
+      touch-action: none;
+    }
+    .card {
+      width: 320px;
+      height: 520px;
+      border-radius: 28px;
+      background: linear-gradient(160deg, #b00000, #7a0000);
+      box-shadow: 0 0 25px rgba(255,204,77,.8), 0 25px 70px rgba(0,0,0,.75);
+      position: relative;
+      overflow: hidden;
+    }
+    .center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      text-align: center;
+    }
+    .hidden { display: none; }
+
+    #scratch {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      touch-action: none;
+    }
+
+    #prizeLayer {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+
+    #inputLayer {
+      position: absolute;
+      inset: 0;
+      z-index: 6;
+      background-color: #D42D20;
+    }
+
+    #progressText {
+      position: absolute;
+      bottom: 12px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-weight: bold;
+      color: #FFD700;
+      z-index: 7;
+    }
+
+    #prizeImg {
+      width: 200px;
+      height: 200px;
+      object-fit: contain;
+      margin: 8px 0;
+    }
+
+    #prizeText {
+      font-weight: 800;
+      color: #fef08a;
+      text-align: center;
+      padding: 0 12px;
+      line-height: 1.3;
+      font-size: 1.3rem;
+    }
+  </style>
+</head>
+
+<body class="flex items-center justify-center text-white">
+
+  <audio id="bgSound" preload="auto" loop playsinline>
+    <source src="https://raw.githubusercontent.com/Azapaindev/luckydraw-participant/refs/heads/main/CNY%202026/viacheslavstarostin-chinese-lunar-new-year-465871.mp3" type="audio/mpeg">
+  </audio>
+
+  <div>
+    <h1 class="text-3xl font-extrabold text-center mb-6 text-yellow-300">
+      🧧អាំងប៉ាវ គ្រួសារ រ័ន ម៉រ🧧
+    </h1>
+
+    <div id="card" class="card">
+      <div id="prizeLayer" class="center px-4">
+        <h2 id="congratsText" class="text-lg font-semibold text-yellow-400 mb-1 hidden">
+          Congratulations!
+        </h2>
+        <p id="winnerIdText" class="text-sm text-yellow-200 mb-1 hidden"></p>
+        <img id="prizeImg" src="">
+        <p id="prizeText"></p>
+      </div>
+
+      <canvas id="scratch" class="hidden"></canvas>
+      <div id="progressText" class="hidden">Luck Revealed: 0%</div>
+
+      <div id="inputLayer" class="center px-6">
+        <input id="userId"
+               class="w-full p-3 rounded-full text-black text-center mb-4 font-semibold"
+               placeholder="Enter your ID">
+        <button id="openBtn"
+                class="bg-yellow-400 text-black px-8 py-3 rounded-full font-extrabold text-lg">
+          Open Ang Pao
+        </button>
+      </div>
+    </div>
+  </div>
+
+<script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+import {
+  getFirestore, collection, getDocs, addDoc,
+  doc, runTransaction, query, where, getDoc
+} from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAc53UEPP9_bz0W3iBmhghKROPL-FhsQCg",
   authDomain: "luckydraw-oml.firebaseapp.com",
-  projectId: "luckydraw-oml",
-  storageBucket: "luckydraw-oml.firebasestorage.app",
-  messagingSenderId: "147642717383",
-  appId: "1:147642717383:web:a6c3663bed4c0dede25ae2",
-  measurementId: "G-MKN8QVYDYD"
+  projectId: "luckydraw-oml"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-let prizes=[];
 
-window.checkWinner = function(){
-  const num = document.getElementById('participantNumber').value.trim();
-  if(!num){ alert('Enter your ticket number'); return; }
+let prize = null;
+let currentUserId = "";
+let finished = false;
+let isExistingWinner = false;
 
-  let found = false;
-  let prizeName = '';
-  for(const prize of prizes){
-    if(prize.tickets.includes(num)){
-      found = true;
-      prizeName = prize.name;
+function normalizeId(raw) {
+  const digits = String(raw).replace(/\D/g, '');
+  if (!digits) return null;
+  return digits.padStart(6, '0');
+}
+
+const openBtn = document.getElementById('openBtn');
+const userId = document.getElementById('userId');
+const scratch = document.getElementById('scratch');
+const progressText = document.getElementById('progressText');
+const prizeImg = document.getElementById('prizeImg');
+const prizeText = document.getElementById('prizeText');
+const congratsText = document.getElementById('congratsText');
+const winnerIdText = document.getElementById('winnerIdText');
+const inputLayer = document.getElementById('inputLayer');
+const card = document.getElementById('card');
+
+openBtn.onclick = async () => {
+
+  const normalized = normalizeId(userId.value.trim());
+  if (!normalized) return alert("Invalid ID");
+
+  currentUserId = normalized;
+  openBtn.disabled = true;
+
+  const winnerSnap = await getDocs(
+    query(collection(db,"winners"), where("userId","==",normalized))
+  );
+
+  if (!winnerSnap.empty) {
+    isExistingWinner = true;
+    const win = winnerSnap.docs[0].data();
+    const prizeRef = doc(db,"prizes",win.prizeId);
+    const prizeSnap = await getDoc(prizeRef);
+    prize = { id: win.prizeId, ...prizeSnap.data() };
+    startScratch(win.companyId);
+    return;
+  }
+
+  const companies = await getDocs(collection(db,"companies"));
+  let companyId = null;
+
+  for (const c of companies.docs) {
+    const ids = c.data().ids || [];
+    if (ids.map(normalizeId).includes(normalized)) {
+      companyId = c.id;
       break;
     }
   }
 
-  const resultEl = document.getElementById('result');
-  if(found){
-    resultEl.innerHTML=`<span class='text-green-600 text-2xl font-bold'>🎉 Congratulations! You won: <b>${prizeName}</b></span>`;
-    // Trigger confetti
-    confetti({
-      particleCount: 150,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: ['#a78bfa','#f472b6','#60a5fa','#34d399','#facc15']
-    });
-  } else {
-    resultEl.innerHTML=`<span class='text-gray-700 text-xl'>No winning prize yet.</span>`;
+  if (!companyId) {
+    alert("ID not in company");
+    openBtn.disabled = false;
+    return;
   }
+
+  const prizes = await getDocs(collection(db,"prizes"));
+  const available = prizes.docs
+    .map(d=>({id:d.id,...d.data()}))
+    .filter(p=>p.companyId===companyId && (p.tickets?.length||0) < p.count);
+
+  if (!available.length) {
+    alert("No prizes left");
+    openBtn.disabled=false;
+    return;
+  }
+
+  prize = available[Math.floor(Math.random()*available.length)];
+  startScratch(companyId);
 };
 
-onSnapshot(collection(db,'prizes'), snapshot=>{
-  prizes = snapshot.docs.map(d=>d.data());
-});
+function startScratch(companyId){
+  inputLayer.classList.add("hidden");
+  scratch.classList.remove("hidden");
+  progressText.classList.remove("hidden");
+
+  const ctx = scratch.getContext("2d",{willReadFrequently:true});
+  scratch.width = card.clientWidth;
+  scratch.height = card.clientHeight;
+
+  ctx.fillStyle="#d4af37";
+  ctx.fillRect(0,0,scratch.width,scratch.height);
+  ctx.globalCompositeOperation="destination-out";
+
+  function draw(x,y){
+    ctx.beginPath();
+    ctx.arc(x,y,35,0,Math.PI*2);
+    ctx.fill();
+  }
+
+  function percent(){
+    const d = ctx.getImageData(0,0,scratch.width,scratch.height).data;
+    let c=0;
+    for(let i=3;i<d.length;i+=4) if(d[i]===0)c++;
+    return c/(d.length/4);
+  }
+
+  scratch.onmousemove = scratch.ontouchmove = e=>{
+    if(finished) return;
+    const r = scratch.getBoundingClientRect();
+    const t = e.touches?e.touches[0]:e;
+    draw(t.clientX-r.left,t.clientY-r.top);
+
+    const p = Math.floor(percent()*100);
+    progressText.textContent="Luck Revealed: "+p+"%";
+
+    if(p>=70){
+      finished=true;
+      reveal(companyId);
+    }
+  };
+}
+
+async function reveal(companyId){
+
+  if(isExistingWinner){
+    showWin();
+    return;
+  }
+
+  try{
+    await runTransaction(db, async tx=>{
+      const ref = doc(db,"prizes",prize.id);
+      const snap = await tx.get(ref);
+
+      if(!snap.exists()) throw "No prize";
+
+      const data = snap.data();
+
+      if(data.companyId!==companyId)
+        throw "Wrong company";
+
+      const tickets = data.tickets||[];
+
+      if(tickets.length>=data.count)
+        throw "Limit reached";
+
+      tickets.push(currentUserId);
+
+      tx.update(ref,{tickets});
+
+      await addDoc(collection(db,"winners"),{
+        userId:currentUserId,
+        prizeId:prize.id,
+        companyId,
+        timestamp:Date.now()
+      });
+    });
+
+    showWin();
+
+  }catch(e){
+    alert("Prize finished. Try again.");
+    location.reload();
+  }
+}
+
+function showWin(){
+  scratch.classList.add("hidden");
+  progressText.classList.add("hidden");
+
+  prizeImg.src = prize.imageUrl || "";
+  prizeText.textContent = prize.name;
+
+  congratsText.classList.remove("hidden");
+  winnerIdText.classList.remove("hidden");
+  winnerIdText.textContent="ID: "+currentUserId;
+
+  confetti({particleCount:200,spread:140,origin:{y:0.6}});
+}
 </script>
-</head>
-<body class='bg-gradient-to-br from-purple-500 to-pink-500 min-h-screen flex items-center justify-center p-6'>
-<div class='w-full max-w-md bg-white rounded-2xl shadow-lg p-8 text-center'>
-  <h1 class='text-4xl font-extrabold text-purple-600 mb-6 animate-bounce'>🎉 Lucky Draw 🎉</h1>
-  <p class='text-gray-600 mb-4'>Enter your ticket number to see if you won!</p>
-  <input id='participantNumber' type='text' placeholder='Enter Your Ticket Number' class='w-full border rounded-lg p-3 mb-3 text-center'/>
-  <button onclick='checkWinner()' class='bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg w-full transition transform hover:scale-105'>Check</button>
-  <p id='result' class='mt-6 font-bold'></p>
-</div>
+
 </body>
 </html>
-
-
-

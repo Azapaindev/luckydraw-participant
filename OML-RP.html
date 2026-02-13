@@ -7,115 +7,42 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <style>
-html,body{
-  margin:0;height:100%;
-  font-family:system-ui;
-  background:radial-gradient(circle at top,#ffcc4d,#7a0000);
-}
+html,body{margin:0;height:100%;font-family:system-ui;background:radial-gradient(circle at top,#ffcc4d,#7a0000);}
 body.no-scroll{overflow:hidden;touch-action:none}
-.card{
-  width:320px;height:520px;
-  border-radius:28px;
-  background:linear-gradient(160deg,#b00000,#7a0000);
-  box-shadow:0 0 25px rgba(255,204,77,.8),0 25px 70px rgba(0,0,0,.75);
-  position:relative;
-  overflow:hidden;
-}
-.center{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  height:100%;
-  text-align:center;
-}
+.card{width:320px;height:520px;border-radius:28px;background:linear-gradient(160deg,#b00000,#7a0000);box-shadow:0 0 25px rgba(255,204,77,.8),0 25px 70px rgba(0,0,0,.75);position:relative;overflow:hidden;}
+.center{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;}
 .hidden{display:none}
 #scratch{position:absolute;inset:0;z-index:5;touch-action:none}
 #prizeLayer{position:absolute;inset:0;z-index:1}
-#prizeLayer.big{
-  transform:scale(1.25);
-  text-shadow:0 0 18px rgba(255,215,0,.9);
-}
-#inputLayer{
-  position:absolute;
-  inset:0;
-  z-index:6;
-  background-color:#D42D20;
-}
-#progressText{
-  position:absolute;
-  bottom:12px;
-  left:0;right:0;
-  text-align:center;
-  font-weight:bold;
-  color:#FFD700;
-  z-index:7;
-}
-.firecracker{
-  position:absolute;
-  top:12px;
-  width:64px;
-  pointer-events:none;
-  z-index:7;
-}
+#prizeLayer.big{transform:scale(1.25);text-shadow:0 0 18px rgba(255,215,0,.9);}
+#inputLayer{position:absolute;inset:0;z-index:6;background-color:#D42D20;}
+#progressText{position:absolute;bottom:12px;left:0;right:0;text-align:center;font-weight:bold;color:#FFD700;z-index:7;}
+.firecracker{position:absolute;top:12px;width:64px;pointer-events:none;z-index:7;}
 .firecracker.left{left:10px}
 .firecracker.right{right:10px}
-#lion{
-  width:280px;
-  margin-top:-20px;
-  margin-bottom:10px;
-}
-#prizeImg {
-  width: 200px;
-  height: 200px;
-  object-fit: contain;
-  object-position: center;
-  background: transparent;
-  border-radius: 16px;
-  margin: 8px 0;
-}
-#prizeText {
-  font-weight: 800;
-  color: #fef08a;
-  text-align: center;
-  padding: 0 12px;
-  margin: 8px auto 0;
-  max-width: 280px;
-  word-break: break-word;
-  overflow-wrap: break-word;
-  hyphens: auto;
-  line-height: 1.3;
-}
-#prizeText { font-size: 1.375rem; }
-#prizeText.long { font-size: 1.2rem; line-height: 1.28; }
-#prizeText.very-long { font-size: 1.05rem; line-height: 1.25; }
-@media (max-width: 360px) {
-  #prizeText { font-size: 1.125rem; }
-  #prizeText.long,
-  #prizeText.very-long { font-size: 1rem; }
-}
-#instructionText {
-  transition: opacity 0.5s ease;
-}
+#lion{width:280px;margin-top:-20px;margin-bottom:10px;}
+#prizeImg{width:200px;height:200px;object-fit:contain;object-position:center;background:transparent;border-radius:16px;margin:8px 0;}
+#prizeText{font-weight:800;color:#fef08a;text-align:center;padding:0 12px;margin:8px auto 0;max-width:280px;word-break:break-word;overflow-wrap:break-word;hyphens:auto;line-height:1.3;}
+#prizeText{font-size:1.375rem;}
+#prizeText.long{font-size:1.2rem;line-height:1.28;}
+#prizeText.very-long{font-size:1.05rem;line-height:1.25;}
+@media (max-width:360px){#prizeText{font-size:1.125rem;}#prizeText.long,#prizeText.very-long{font-size:1rem;}}
+#instructionText{transition:opacity 0.5s ease;}
 </style>
 </head>
 <body class="flex items-center justify-center text-white">
+
 <audio id="bgSound" preload="auto" loop playsinline>
   <source src="https://raw.githubusercontent.com/Azapaindev/luckydraw-participant/refs/heads/main/CNY%202026/viacheslavstarostin-chinese-lunar-new-year-465871.mp3" type="audio/mpeg">
-  Your browser does not support the audio element.
 </audio>
+
 <div>
-<h1 class="text-3xl font-extrabold text-center mb-6 text-yellow-300">
-  🧧អាំងប៉ាវ គ្រួសារ រ័ន ម៉រ🧧
-</h1>
-<p id="instructionText" class="text-center text-yellow-200 mb-4 text-lg font-medium opacity-0 hidden">
-  កោសរកលាបសំណាង
-</p>
+<h1 class="text-3xl font-extrabold text-center mb-6 text-yellow-300">🧧អាំងប៉ាវ គ្រួសារ រ័ន ម៉រ🧧</h1>
+<p id="instructionText" class="text-center text-yellow-200 mb-4 text-lg font-medium opacity-0 hidden">កោសរកលាបសំណាង</p>
+
 <div id="card" class="card">
   <div id="prizeLayer" class="center px-4">
-    <h2 id="congratsText" class="text-lg font-semibold text-yellow-400 mb-1 hidden">
-      Congratulations!
-    </h2>
+    <h2 id="congratsText" class="text-lg font-semibold text-yellow-400 mb-1 hidden">Congratulations!</h2>
     <p id="winnerIdText" class="text-sm text-yellow-200 mb-1 hidden"></p>
     <img id="prizeImg" src="" alt="Prize">
     <p id="prizeText"></p>
@@ -123,19 +50,11 @@ body.no-scroll{overflow:hidden;touch-action:none}
   <canvas id="scratch" class="hidden"></canvas>
   <div id="progressText" class="hidden">Luck Revealed: 0%</div>
   <div id="inputLayer" class="center px-6">
-    <img class="firecracker left"
-      src="https://i.pinimg.com/originals/f2/28/49/f22849aa488dfefce7ac2a17b5b4d0d9.gif">
-    <img class="firecracker right"
-      src="https://i.pinimg.com/originals/f2/28/49/f22849aa488dfefce7ac2a17b5b4d0d9.gif">
-    <img id="lion"
-      src="https://i.pinimg.com/originals/3f/c1/be/3fc1bef451c684ddcfb9f5bb98cd30f3.gif">
-    <input id="userId"
-      class="w-full p-3 rounded-full text-black text-center mb-4 font-semibold"
-      placeholder="Enter your ID">
-    <button id="openBtn"
-      class="bg-yellow-400 text-black px-8 py-3 rounded-full font-extrabold text-lg">
-      ចុចបើកអាំងប៉ាវ
-    </button>
+    <img class="firecracker left" src="https://i.pinimg.com/originals/f2/28/49/f22849aa488dfefce7ac2a17b5b4d0d9.gif">
+    <img class="firecracker right" src="https://i.pinimg.com/originals/f2/28/49/f22849aa488dfefce7ac2a17b5b4d0d9.gif">
+    <img id="lion" src="https://i.pinimg.com/originals/3f/c1/be/3fc1bef451c684ddcfb9f5bb98cd30f3.gif">
+    <input id="userId" class="w-full p-3 rounded-full text-black text-center mb-4 font-semibold" placeholder="Enter your ID">
+    <button id="openBtn" class="bg-yellow-400 text-black px-8 py-3 rounded-full font-extrabold text-lg">ចុចបើកអាំងប៉ាវ</button>
   </div>
 </div>
 </div>
@@ -163,7 +82,7 @@ let prize = null;
 let finished = false;
 let currentUserId = "";
 let isExistingWinner = false;
-let isProcessing = false; // ← NEW: prevent parallel reveals
+let isProcessing = false;
 
 function normalizeId(raw) {
   const digits = String(raw).replace(/\D/g, '');
@@ -171,33 +90,28 @@ function normalizeId(raw) {
   return digits.padStart(6, '0');
 }
 
-// Audio handling
 const audio = document.getElementById('bgSound');
-function tryPlayAudio() {
-  audio?.play().catch(() => {});
-}
+function tryPlayAudio() { audio?.play().catch(() => {}); }
 tryPlayAudio();
 document.addEventListener('touchstart', tryPlayAudio, { once: true });
 document.addEventListener('click', tryPlayAudio, { once: true });
 
-/* MAIN BUTTON */
 document.getElementById("openBtn").onclick = async () => {
   if (isProcessing) return;
 
   let input = document.getElementById("userId").value.trim();
-  if (!input) return alert("Please enter ID");
+  if (!input) return alert("សូមបញ្ចូល ID");
 
   const normalized = normalizeId(input);
-  if (!normalized) return alert("Invalid ID – please use numbers only");
+  if (!normalized) return alert("ID មិនត្រឹមត្រូវ – សូមប្រើតែលេខ");
 
   currentUserId = normalized;
   const openBtn = document.getElementById("openBtn");
   openBtn.disabled = true;
-  openBtn.textContent = "Checking...";
+  openBtn.textContent = "កំពុងពិនិត្យ...";
 
   tryPlayAudio();
 
-  // Check if already won
   const winnerSnap = await getDocs(
     query(collection(db, "winners"), where("userId", "==", normalized))
   );
@@ -214,12 +128,11 @@ document.getElementById("openBtn").onclick = async () => {
         return;
       }
     }
-    alert("You already won, but prize details could not be loaded.");
+    alert("អ្នកធ្លាប់ឈ្នះរួចហើយ ប៉ុន្តែមិនអាចផ្ទុកព័ត៌មានរង្វាន់បានទេ។");
     resetButton();
     return;
   }
 
-  // Find company
   const companySnap = await getDocs(collection(db, "companies"));
   let companyId = null;
   for (const docSnap of companySnap.docs) {
@@ -231,19 +144,18 @@ document.getElementById("openBtn").onclick = async () => {
   }
 
   if (!companyId) {
-    alert("ID not found in any company list");
+    alert("មិនមាន ID នេះនៅក្នុងបញ្ជីក្រុមហ៊ុនណាមួយទេ");
     resetButton();
     return;
   }
 
-  // Get available prizes
   const prizeSnap = await getDocs(collection(db, "prizes"));
   const available = prizeSnap.docs
     .map(d => ({ id: d.id, ...d.data() }))
     .filter(p => p.companyId === companyId && (p.tickets?.length || 0) < p.count);
 
   if (available.length === 0) {
-    alert("No more prizes available for your company.");
+    alert("រង្វាន់សម្រាប់ក្រុមហ៊ុនរបស់អ្នកអស់រួចហើយ។");
     resetButton();
     return;
   }
@@ -258,10 +170,9 @@ function resetButton() {
   btn.textContent = "ចុចបើកអាំងប៉ាវ";
 }
 
-/* SCRATCH CARD */
 function startScratch(companyId) {
   document.getElementById("prizeImg").src = PLACEHOLDER_IMG;
-  document.getElementById("prizeText").textContent = "Scratch to reveal";
+  document.getElementById("prizeText").textContent = "កោសដើម្បីបើក";
 
   const instr = document.getElementById("instructionText");
   instr.classList.remove("hidden");
@@ -295,9 +206,7 @@ function initScratch(uid, companyId) {
   function getRevealedPercent() {
     const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
     let count = 0;
-    for (let i = 3; i < data.length; i += 4) {
-      if (data[i] === 0) count++;
-    }
+    for (let i = 3; i < data.length; i += 4) if (data[i] === 0) count++;
     return count / (data.length / 4);
   }
 
@@ -316,7 +225,7 @@ function initScratch(uid, companyId) {
 
     if (percent >= 70) {
       finished = true;
-      canvas.style.pointerEvents = "none"; // ← prevent more scratching
+      canvas.style.pointerEvents = "none";
       reveal(uid, companyId);
     }
   };
@@ -341,23 +250,26 @@ async function reveal(uid, companyId) {
       const snap = await tx.get(prizeRef);
 
       if (!snap.exists()) {
-        throw new Error("Prize no longer exists");
+        throw new Error("រង្វាន់នេះលែងមានទៀតហើយ");
       }
 
       const data = snap.data();
-      const tickets = data.tickets || [];
+      const currentTickets = data.tickets || [];
+      const currentCount = currentTickets.length;
 
-      // Defensive check (extra safety)
-      if (tickets.includes(uid)) {
-        throw new Error("This prize was already claimed");
+      // Critical: enforce quantity limit inside transaction
+      if (currentCount >= data.count) {
+        throw new Error("រង្វាន់អស់រួចហើយ (លើសកម្រិតកំណត់)");
       }
 
-      // Main update – use arrayUnion (safe & idempotent)
+      if (currentTickets.includes(uid)) {
+        throw new Error("អ្នកធ្លាប់ទាមទាររង្វាន់នេះរួចហើយ");
+      }
+
       tx.update(prizeRef, {
         tickets: arrayUnion(uid)
       });
 
-      // Record winner
       await addDoc(collection(db, "winners"), {
         userId: uid,
         prizeId: prize.id,
@@ -371,9 +283,11 @@ async function reveal(uid, companyId) {
   } catch (err) {
     console.error("Reveal error:", err);
 
-    let msg = "Sorry, there was a problem claiming your prize.";
-    if (err.message?.includes("already claimed") || err.code === "failed-precondition") {
-      msg = "This prize was already claimed (possibly opened in another tab).";
+    let msg = "មានបញ្ហាក្នុងការទាមទាររង្វាន់។ សូមព្យាយាមម្តងទៀត។";
+    if (err.message?.includes("អស់រួចហើយ") || err.message?.includes("លើសកម្រិតកំណត់")) {
+      msg = "រង្វាន់នេះអស់រួចហើយ (លើសចំនួនកំណត់) – សូមសាករង្វាន់ផ្សេង!";
+    } else if (err.message?.includes("ធ្លាប់ទាមទារ")) {
+      msg = "អ្នកធ្លាប់ឈ្នះរង្វាន់នេះរួចហើយ (ប្រហែលជាបើកក្នុងទាប់ផ្សេង)";
     }
     alert(msg);
     resetButton();

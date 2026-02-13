@@ -30,7 +30,7 @@ input{
 
 <div class="card space-y-4">
 
-  <input id="claimId" placeholder="Enter Winner ID"
+  <input id="claimId" placeholder="Enter Winner ID (e.g. 2887 or 002887)"
     class="p-3 rounded w-full">
 
   <button onclick="checkWinner()"
@@ -48,11 +48,9 @@ import {
   getFirestore,
   collection,
   getDocs,
-  query,
-  where,
-  updateDoc,
   doc,
-  getDoc
+  getDoc,
+  updateDoc
 } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -67,31 +65,46 @@ const db = getFirestore(app);
 const DEFAULT_IMG = "https://www.pngarts.com/files/3/Money-PNG-Image.png";
 
 window.checkWinner = async () => {
-  const id = document.getElementById("claimId").value.trim();
+  const input = document.getElementById("claimId").value.trim();
   const resultBox = document.getElementById("resultBox");
 
-  if (!id) {
-    alert("Enter Winner ID");
+  if (!input) {
+    alert("Please enter Winner ID");
     return;
   }
 
   resultBox.innerHTML = '<div class="text-gray-400">Checking...</div>';
 
-  const q = query(collection(db, "winners"), where("userId", "==", id));
-  const snap = await getDocs(q);
+  // Normalize input: remove leading zeros, but keep at least "0" if input was only zeros
+  const normalizedInput = input.replace(/^0+/, '') || '0';
 
-  if (snap.empty) {
+  // Get ALL winners (fine for lucky draw – usually few hundred/thousand max)
+  const winnersSnap = await getDocs(collection(db, "winners"));
+
+  let winnerDoc = null;
+
+  for (const docSnap of winnersSnap.docs) {
+    const data = docSnap.data();
+    const storedId = data.userId || "";
+    // Normalize stored ID the same way
+    const normalizedStored = storedId.replace(/^0+/, '') || '0';
+
+    if (normalizedStored === normalizedInput) {
+      winnerDoc = docSnap;
+      break;
+    }
+  }
+
+  if (!winnerDoc) {
     resultBox.innerHTML = `<div class="text-red-400 font-bold">❌ ID not found</div>`;
     return;
   }
 
-  const winnerDoc = snap.docs[0];
   const w = winnerDoc.data();
 
   // Try to get prize image
   let imageUrl = DEFAULT_IMG;
 
-  // Preferred: if prizeId was saved when winner was created
   if (w.prizeId) {
     const prizeRef = doc(db, "prizes", w.prizeId);
     const prizeSnap = await getDoc(prizeRef);
@@ -99,7 +112,6 @@ window.checkWinner = async () => {
       imageUrl = prizeSnap.data().imageUrl || DEFAULT_IMG;
     }
   }
-  // Fallback: try to match by name (may pick wrong one if duplicate names)
   else if (w.prizeName) {
     const prizeQuery = query(collection(db, "prizes"), where("name", "==", w.prizeName));
     const prizeSnap = await getDocs(prizeQuery);
@@ -112,14 +124,14 @@ window.checkWinner = async () => {
     resultBox.innerHTML = `
       <div class="bg-red-600 p-4 rounded text-white font-bold text-center">
         ⚠️ Already Claimed<br>
-        <div class="my-3 text-lg">${w.prizeName}</div>
+        <div class="my-3 text-lg">${w.prizeName || 'Unknown Prize'}</div>
         <img src="${imageUrl}" class="mx-auto max-h-48 object-contain rounded" alt="prize">
       </div>`;
   } else {
     resultBox.innerHTML = `
       <div class="bg-green-600 p-5 rounded text-white">
         <div class="font-bold text-xl mb-3 text-center">🎉 Winner Found!</div>
-        <div class="text-lg mb-2">Item: <strong>${w.prizeName}</strong></div>
+        <div class="text-lg mb-2">Item: <strong>${w.prizeName || 'Unknown Prize'}</strong></div>
         <img src="${imageUrl}" class="mx-auto max-h-64 object-contain rounded mb-4 border-2 border-yellow-400" alt="prize image">
         <button onclick="confirmClaim('${winnerDoc.id}')"
           class="bg-black text-yellow-300 font-bold px-6 py-3 rounded w-full text-lg">
@@ -132,14 +144,18 @@ window.checkWinner = async () => {
 window.confirmClaim = async (docId) => {
   if (!confirm("Confirm this prize has been claimed?")) return;
 
-  await updateDoc(doc(db, "winners", docId), {
-    claimed: true,
-    claimTime: Date.now()
-  });
+  try {
+    await updateDoc(doc(db, "winners", docId), {
+      claimed: true,
+      claimTime: Date.now()
+    });
 
-  alert("Claim Successful ✅");
-  document.getElementById("claimId").value = "";
-  document.getElementById("resultBox").innerHTML = "";
+    alert("Claim Successful ✅");
+    document.getElementById("claimId").value = "";
+    document.getElementById("resultBox").innerHTML = "";
+  } catch (err) {
+    alert("Error updating claim: " + err.message);
+  }
 };
 </script>
 

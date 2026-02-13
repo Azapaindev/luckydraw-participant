@@ -1,126 +1,152 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Ang Pao Lucky Game</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<meta charset="UTF-8">
+<title>Ang Pao Lucky Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
-  <style>
-    html, body {
-      margin: 0;
-      height: 100%;
-      font-family: system-ui;
-      background: radial-gradient(circle at top, #ffcc4d, #7a0000);
-    }
-    body.no-scroll {
-      overflow: hidden;
-      touch-action: none;
-    }
-    .card {
-      width: 320px;
-      height: 520px;
-      border-radius: 28px;
-      background: linear-gradient(160deg, #b00000, #7a0000);
-      box-shadow: 0 0 25px rgba(255,204,77,.8), 0 25px 70px rgba(0,0,0,.75);
-      position: relative;
-      overflow: hidden;
-    }
-    .center {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      text-align: center;
-    }
-    .hidden { display: none; }
-
-    #scratch {
-      position: absolute;
-      inset: 0;
-      z-index: 5;
-      touch-action: none;
-    }
-
-    #prizeLayer {
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-    }
-
-    #inputLayer {
-      position: absolute;
-      inset: 0;
-      z-index: 6;
-      background-color: #D42D20;
-    }
-
-    #progressText {
-      position: absolute;
-      bottom: 12px;
-      left: 0;
-      right: 0;
-      text-align: center;
-      font-weight: bold;
-      color: #FFD700;
-      z-index: 7;
-    }
-
-    #prizeImg {
-      width: 200px;
-      height: 200px;
-      object-fit: contain;
-      margin: 8px 0;
-    }
-
-    #prizeText {
-      font-weight: 800;
-      color: #fef08a;
-      text-align: center;
-      padding: 0 12px;
-      line-height: 1.3;
-      font-size: 1.3rem;
-    }
-  </style>
+<style>
+html,body{
+  margin:0;height:100%;
+  font-family:system-ui;
+  background:radial-gradient(circle at top,#ffcc4d,#7a0000);
+}
+body.no-scroll{overflow:hidden;touch-action:none}
+.card{
+  width:320px;height:520px;
+  border-radius:28px;
+  background:linear-gradient(160deg,#b00000,#7a0000);
+  box-shadow:0 0 25px rgba(255,204,77,.8),0 25px 70px rgba(0,0,0,.75);
+  position:relative;
+  overflow:hidden;
+}
+.center{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  height:100%;
+  text-align:center;
+}
+.hidden{display:none}
+#scratch{position:absolute;inset:0;z-index:5;touch-action:none}
+#prizeLayer{position:absolute;inset:0;z-index:1}
+#prizeLayer.big{
+  transform:scale(1.25);
+  text-shadow:0 0 18px rgba(255,215,0,.9);
+}
+#inputLayer{
+  position:absolute;
+  inset:0;
+  z-index:6;
+  background-color:#D42D20;
+}
+#progressText{
+  position:absolute;
+  bottom:12px;
+  left:0;right:0;
+  text-align:center;
+  font-weight:bold;
+  color:#FFD700;
+  z-index:7;
+}
+.firecracker{
+  position:absolute;
+  top:12px;
+  width:64px;
+  pointer-events:none;
+  z-index:7;
+}
+.firecracker.left{left:10px}
+.firecracker.right{right:10px}
+#lion{
+  width:280px;
+  margin-top:-20px;
+  margin-bottom:10px;
+}
+#prizeImg {
+  width: 200px;
+  height: 200px;
+  object-fit: contain;
+  object-position: center;
+  background: transparent;
+  border-radius: 16px;
+  margin: 8px 0;
+}
+#prizeText {
+  font-weight: 800;
+  color: #fef08a;
+  text-align: center;
+  padding: 0 12px;
+  margin: 8px auto 0;
+  max-width: 280px;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  line-height: 1.3;
+}
+#prizeText { font-size: 1.375rem; }
+#prizeText.long { font-size: 1.2rem; line-height: 1.28; }
+#prizeText.very-long { font-size: 1.05rem; line-height: 1.25; }
+@media (max-width: 360px) {
+  #prizeText { font-size: 1.125rem; }
+  #prizeText.long,
+  #prizeText.very-long { font-size: 1rem; }
+}
+#instructionText {
+  transition: opacity 0.5s ease;
+}
+</style>
 </head>
-
 <body class="flex items-center justify-center text-white">
 
-  <audio id="bgSound" preload="auto" loop playsinline>
-    <source src="https://raw.githubusercontent.com/Azapaindev/luckydraw-participant/refs/heads/main/CNY%202026/viacheslavstarostin-chinese-lunar-new-year-465871.mp3" type="audio/mpeg">
-  </audio>
+<audio id="bgSound" preload="auto" loop playsinline>
+  <source src="https://raw.githubusercontent.com/Azapaindev/luckydraw-participant/refs/heads/main/CNY%202026/viacheslavstarostin-chinese-lunar-new-year-465871.mp3" type="audio/mpeg">
+  Your browser does not support the audio element.
+</audio>
 
-  <div>
-    <h1 class="text-3xl font-extrabold text-center mb-6 text-yellow-300">
-      🧧អាំងប៉ាវ គ្រួសារ រ័ន ម៉រ🧧
-    </h1>
+<div>
+<h1 class="text-3xl font-extrabold text-center mb-6 text-yellow-300">
+  🧧អាំងប៉ាវ គ្រួសារ រ័ន ម៉រ🧧
+</h1>
 
-    <div id="card" class="card">
-      <div id="prizeLayer" class="center px-4">
-        <h2 id="congratsText" class="text-lg font-semibold text-yellow-400 mb-1 hidden">
-          Congratulations!
-        </h2>
-        <p id="winnerIdText" class="text-sm text-yellow-200 mb-1 hidden"></p>
-        <img id="prizeImg" src="">
-        <p id="prizeText"></p>
-      </div>
+<p id="instructionText" class="text-center text-yellow-200 mb-4 text-lg font-medium opacity-0 hidden">
+  កោសរកលាបសំណាង
+</p>
 
-      <canvas id="scratch" class="hidden"></canvas>
-      <div id="progressText" class="hidden">Luck Revealed: 0%</div>
-
-      <div id="inputLayer" class="center px-6">
-        <input id="userId"
-               class="w-full p-3 rounded-full text-black text-center mb-4 font-semibold"
-               placeholder="Enter your ID">
-        <button id="openBtn"
-                class="bg-yellow-400 text-black px-8 py-3 rounded-full font-extrabold text-lg">
-          Open Ang Pao
-        </button>
-      </div>
-    </div>
+<div id="card" class="card">
+  <div id="prizeLayer" class="center px-4">
+    <h2 id="congratsText" class="text-lg font-semibold text-yellow-400 mb-1 hidden">
+      Congratulations!
+    </h2>
+    <p id="winnerIdText" class="text-sm text-yellow-200 mb-1 hidden"></p>
+    <img id="prizeImg" src="" alt="Prize">
+    <p id="prizeText"></p>
   </div>
+
+  <canvas id="scratch" class="hidden"></canvas>
+
+  <div id="progressText" class="hidden">Luck Revealed: 0%</div>
+
+  <div id="inputLayer" class="center px-6">
+    <img class="firecracker left"
+      src="https://i.pinimg.com/originals/f2/28/49/f22849aa488dfefce7ac2a17b5b4d0d9.gif">
+    <img class="firecracker right"
+      src="https://i.pinimg.com/originals/f2/28/49/f22849aa488dfefce7ac2a17b5b4d0d9.gif">
+    <img id="lion"
+      src="https://i.pinimg.com/originals/3f/c1/be/3fc1bef451c684ddcfb9f5bb98cd30f3.gif">
+    <input id="userId"
+      class="w-full p-3 rounded-full text-black text-center mb-4 font-semibold"
+      placeholder="Enter your ID">
+    <button id="openBtn"
+      class="bg-yellow-400 text-black px-8 py-3 rounded-full font-extrabold text-lg">
+      ចុចបើកអាំងប៉ាវ
+    </button>
+  </div>
+</div>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
@@ -134,186 +160,239 @@ const firebaseConfig = {
   authDomain: "luckydraw-oml.firebaseapp.com",
   projectId: "luckydraw-oml"
 };
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+const PLACEHOLDER_IMG = "https://png.pngtree.com/recommend-works/png-clipart/20250827/ourmid/pngtree-spring-festival-2026-year-of-the-horse-traditional-festival-golden-lunar-png-image_17142053.webp";
+
 let prize = null;
-let currentUserId = "";
 let finished = false;
+let currentUserId = "";
 let isExistingWinner = false;
 
 function normalizeId(raw) {
   const digits = String(raw).replace(/\D/g, '');
-  if (!digits) return null;
+  if (digits.length === 0) return null;
   return digits.padStart(6, '0');
 }
 
-const openBtn = document.getElementById('openBtn');
-const userId = document.getElementById('userId');
-const scratch = document.getElementById('scratch');
-const progressText = document.getElementById('progressText');
-const prizeImg = document.getElementById('prizeImg');
-const prizeText = document.getElementById('prizeText');
-const congratsText = document.getElementById('congratsText');
-const winnerIdText = document.getElementById('winnerIdText');
-const inputLayer = document.getElementById('inputLayer');
-const card = document.getElementById('card');
+// Try to start music very early + on first interaction
+const audio = document.getElementById('bgSound');
 
+function tryPlayAudio() {
+  if (audio) {
+    audio.play()
+      .then(() => console.log("Music started"))
+      .catch(e => console.log("Autoplay blocked:", e.message));
+  }
+}
+
+// Attempt immediately
+tryPlayAudio();
+
+// Also try on any user interaction (click, touch, etc.)
+document.addEventListener('touchstart', tryPlayAudio, { once: true });
+document.addEventListener('click', tryPlayAudio, { once: true });
+
+/* MAIN */
 openBtn.onclick = async () => {
+  let input = userId.value.trim();
+  if (!input) return alert("Please enter ID");
 
-  const normalized = normalizeId(userId.value.trim());
-  if (!normalized) return alert("Invalid ID");
+  const normalized = normalizeId(input);
+  if (!normalized) return alert("Invalid ID – please use numbers only");
 
   currentUserId = normalized;
   openBtn.disabled = true;
+  openBtn.textContent = "Checking...";
+
+  // Try to play again when user clicks the button (very high chance on mobile)
+  tryPlayAudio();
 
   const winnerSnap = await getDocs(
-    query(collection(db,"winners"), where("userId","==",normalized))
+    query(collection(db, "winners"), where("userId", "==", normalized))
   );
 
   if (!winnerSnap.empty) {
     isExistingWinner = true;
     const win = winnerSnap.docs[0].data();
-    const prizeRef = doc(db,"prizes",win.prizeId);
-    const prizeSnap = await getDoc(prizeRef);
-    prize = { id: win.prizeId, ...prizeSnap.data() };
-    startScratch(win.companyId);
+
+    if (win.prizeId) {
+      const prizeRef = doc(db, "prizes", win.prizeId);
+      const prizeSnap = await getDoc(prizeRef);
+      if (prizeSnap.exists()) {
+        prize = { id: win.prizeId, ...prizeSnap.data() };
+        startScratch(win.companyId);
+        return;
+      }
+    }
+
+    alert("You already won, but prize details could not be loaded.");
+    resetButton();
     return;
   }
 
-  const companies = await getDocs(collection(db,"companies"));
+  const companySnap = await getDocs(collection(db, "companies"));
   let companyId = null;
 
-  for (const c of companies.docs) {
-    const ids = c.data().ids || [];
-    if (ids.map(normalizeId).includes(normalized)) {
-      companyId = c.id;
+  for (const docSnap of companySnap.docs) {
+    const ids = docSnap.data().ids || [];
+    const match = ids.some(stored => normalizeId(stored) === normalized);
+    if (match) {
+      companyId = docSnap.id;
       break;
     }
   }
 
   if (!companyId) {
-    alert("ID not in company");
-    openBtn.disabled = false;
+    alert("ID not found in any company list");
+    resetButton();
     return;
   }
 
-  const prizes = await getDocs(collection(db,"prizes"));
-  const available = prizes.docs
-    .map(d=>({id:d.id,...d.data()}))
-    .filter(p=>p.companyId===companyId && (p.tickets?.length||0) < p.count);
+  const prizeSnap = await getDocs(collection(db, "prizes"));
+  const available = prizeSnap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .filter(p => p.companyId === companyId && (p.tickets?.length || 0) < p.count);
 
-  if (!available.length) {
-    alert("No prizes left");
-    openBtn.disabled=false;
+  if (available.length === 0) {
+    alert("No more prizes available for your company.");
+    resetButton();
     return;
   }
 
-  prize = available[Math.floor(Math.random()*available.length)];
+  prize = available[Math.floor(Math.random() * available.length)];
   startScratch(companyId);
 };
 
-function startScratch(companyId){
+function resetButton() {
+  openBtn.disabled = false;
+  openBtn.textContent = "Open Ang Pao";
+}
+
+/* SCRATCH */
+function startScratch(companyId) {
+  prizeImg.src = PLACEHOLDER_IMG;
+  prizeText.textContent = "Scratch to reveal";
+
+  const instr = document.getElementById("instructionText");
+  instr.classList.remove("hidden");
+  instr.style.display = "block";
+  instr.style.opacity = "1";
+
   inputLayer.classList.add("hidden");
   scratch.classList.remove("hidden");
   progressText.classList.remove("hidden");
+  document.body.classList.add("no-scroll");
 
-  const ctx = scratch.getContext("2d",{willReadFrequently:true});
+  initScratch(currentUserId, companyId);
+}
+
+// ... (rest of the code remains the same: initScratch, reveal, showWin functions)
+function initScratch(uid, companyId) {
+  const ctx = scratch.getContext("2d", { willReadFrequently: true });
   scratch.width = card.clientWidth;
   scratch.height = card.clientHeight;
+  ctx.fillStyle = "#d4af37";
+  ctx.fillRect(0, 0, scratch.width, scratch.height);
+  ctx.globalCompositeOperation = "destination-out";
 
-  ctx.fillStyle="#d4af37";
-  ctx.fillRect(0,0,scratch.width,scratch.height);
-  ctx.globalCompositeOperation="destination-out";
-
-  function draw(x,y){
+  function draw(x, y) {
     ctx.beginPath();
-    ctx.arc(x,y,35,0,Math.PI*2);
+    ctx.arc(x, y, 38, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  function percent(){
-    const d = ctx.getImageData(0,0,scratch.width,scratch.height).data;
-    let c=0;
-    for(let i=3;i<d.length;i+=4) if(d[i]===0)c++;
-    return c/(d.length/4);
+  function percent() {
+    const d = ctx.getImageData(0, 0, scratch.width, scratch.height).data;
+    let c = 0;
+    for (let i = 3; i < d.length; i += 4) if (d[i] === 0) c++;
+    return c / (d.length / 4);
   }
 
-  scratch.onmousemove = scratch.ontouchmove = e=>{
-    if(finished) return;
+  scratch.onmousemove = scratch.ontouchmove = e => {
+    if (finished) return;
     const r = scratch.getBoundingClientRect();
-    const t = e.touches?e.touches[0]:e;
-    draw(t.clientX-r.left,t.clientY-r.top);
-
-    const p = Math.floor(percent()*100);
-    progressText.textContent="Luck Revealed: "+p+"%";
-
-    if(p>=70){
-      finished=true;
-      reveal(companyId);
+    const t = e.touches ? e.touches[0] : e;
+    draw(t.clientX - r.left, t.clientY - r.top);
+    const p = Math.floor(percent() * 100);
+    progressText.textContent = "Luck Revealed: " + p + "%";
+    if (p >= 70) {
+      finished = true;
+      reveal(uid, companyId);
     }
   };
 }
 
-async function reveal(companyId){
-
-  if(isExistingWinner){
-    showWin();
+async function reveal(uid, companyId) {
+  if (isExistingWinner) {
+    showWin(prize);
     return;
   }
 
-  try{
-    await runTransaction(db, async tx=>{
-      const ref = doc(db,"prizes",prize.id);
+  try {
+    await runTransaction(db, async tx => {
+      const ref = doc(db, "prizes", prize.id);
       const snap = await tx.get(ref);
+      if (!snap.exists()) throw new Error("Prize disappeared");
 
-      if(!snap.exists()) throw "No prize";
+      const tickets = snap.data().tickets || [];
+      if (tickets.includes(uid)) throw new Error("Already taken");
 
-      const data = snap.data();
+      tickets.push(uid);
+      tx.update(ref, { tickets });
 
-      if(data.companyId!==companyId)
-        throw "Wrong company";
-
-      const tickets = data.tickets||[];
-
-      if(tickets.length>=data.count)
-        throw "Limit reached";
-
-      tickets.push(currentUserId);
-
-      tx.update(ref,{tickets});
-
-      await addDoc(collection(db,"winners"),{
-        userId:currentUserId,
-        prizeId:prize.id,
+      await addDoc(collection(db, "winners"), {
+        userId: uid,
+        prizeId: prize.id,
+        prizeName: prize.name,
         companyId,
-        timestamp:Date.now()
+        timestamp: Date.now()
       });
     });
 
-    showWin();
-
-  }catch(e){
-    alert("Prize finished. Try again.");
-    location.reload();
+    showWin(prize);
+  } catch (err) {
+    console.error(err);
+    alert("Sorry, there was a problem claiming your prize. Please try again or contact support.");
+    resetButton();
   }
 }
 
-function showWin(){
+function showWin(p) {
   scratch.classList.add("hidden");
   progressText.classList.add("hidden");
+  document.body.classList.remove("no-scroll");
 
-  prizeImg.src = prize.imageUrl || "";
-  prizeText.textContent = prize.name;
+  const instr = document.getElementById("instructionText");
+  instr.style.opacity = "0";
+  setTimeout(() => {
+    instr.classList.add("hidden");
+  }, 500);
+
+  prizeImg.src = p.imageUrl || PLACEHOLDER_IMG;
+
+  prizeText.textContent = p.name;
+  prizeText.classList.remove("long", "very-long");
+  const len = p.name.length;
+  if (len > 28) {
+    prizeText.classList.add("very-long");
+  } else if (len > 20) {
+    prizeText.classList.add("long");
+  }
 
   congratsText.classList.remove("hidden");
   winnerIdText.classList.remove("hidden");
-  winnerIdText.textContent="ID: "+currentUserId;
+  winnerIdText.textContent = "ID: " + currentUserId;
 
-  confetti({particleCount:200,spread:140,origin:{y:0.6}});
+  prizeLayer.classList.add("big");
+
+  confetti({
+    particleCount: 200,
+    spread: 140,
+    origin: { y: 0.6 }
+  });
 }
 </script>
-
 </body>
 </html>

@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#667eea">
     <meta name="mobile-web-app-capable" content="yes">
-    <title>Factory Tour Scanner</title>
+    <title>Factory Tour Scanner V-1</title>
     
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     
@@ -118,6 +118,43 @@
             width: 100%;
         }
 
+        /* Camera Selection */
+        .camera-select {
+            background: white;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .select-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #718096;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .camera-dropdown {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            background: white;
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23667eea' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 35px;
+        }
+
+        .camera-dropdown:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
         /* Scanner Section */
         .scanner-wrapper {
             background: #000;
@@ -160,6 +197,8 @@
             height: 100% !important;
             object-fit: cover !important;
             border-radius: 16px;
+            /* Prevent zoom by using proper object fit */
+            transform: scale(1) !important;
         }
 
         /* Scan Overlay */
@@ -181,9 +220,9 @@
         }
 
         .scan-frame {
-            width: 70%;
-            max-width: 280px;
-            aspect-ratio: 1.6;
+            width: 80%;
+            max-width: 300px;
+            height: 120px;
             border: 2px solid rgba(255,255,255,0.3);
             border-radius: 12px;
             position: relative;
@@ -259,6 +298,60 @@
             border-radius: 20px;
             font-size: 0.8rem;
             white-space: nowrap;
+        }
+
+        /* Zoom Controls */
+        .zoom-controls {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .zoom-controls.active {
+            display: flex;
+        }
+
+        .zoom-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.6);
+            border: 2px solid white;
+            color: white;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+        }
+
+        .zoom-btn:active {
+            background: rgba(102, 126, 234, 0.8);
+            transform: scale(0.95);
+        }
+
+        .zoom-level {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: none;
+            backdrop-filter: blur(4px);
+        }
+
+        .zoom-level.active {
+            display: block;
         }
 
         /* Controls */
@@ -647,11 +740,19 @@
             <div class="permission-banner" id="permissionBanner">
                 <div class="permission-title">⚠️ Camera Access Required</div>
                 <div class="permission-text">
-                    This app needs camera permission to scan barcodes. Please allow access when prompted, or check your browser settings.
+                    This app needs camera permission to scan barcodes. Please allow access when prompted.
                 </div>
                 <button class="permission-btn" onclick="requestCameraPermission()">
                     Allow Camera Access
                 </button>
+            </div>
+
+            <!-- Camera Selection -->
+            <div class="camera-select" id="cameraSelect" style="display: none;">
+                <div class="select-label">📷 Select Camera</div>
+                <select class="camera-dropdown" id="cameraDropdown" onchange="changeCamera()">
+                    <option value="">Loading cameras...</option>
+                </select>
             </div>
 
             <div class="scanner-wrapper" id="scannerWrapper">
@@ -669,6 +770,14 @@
                     </div>
                     <div class="scan-hint">Align barcode within frame</div>
                 </div>
+                
+                <!-- Zoom Controls -->
+                <div class="zoom-level" id="zoomLevel">1.0x</div>
+                <div class="zoom-controls" id="zoomControls">
+                    <button class="zoom-btn" onclick="zoomIn()">+</button>
+                    <button class="zoom-btn" onclick="zoomOut()">−</button>
+                </div>
+                
                 <div class="loading-overlay" id="loadingOverlay">
                     <div class="spinner"></div>
                     <div>Starting camera...</div>
@@ -741,30 +850,82 @@
         let stats = { total: 0, success: 0, failed: 0 };
         let recentBarcodes = new Set();
         let wakeLock = null;
+        let currentZoom = 1.0;
+        let videoTrack = null;
+        let cameras = [];
+        let currentCameraId = null;
 
         // Initialize
         window.onload = function() {
-            // Check for camera support
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                showToast('Camera not supported on this device', 'error');
+                showToast('Camera not supported', 'error');
                 document.getElementById('startBtn').disabled = true;
                 return;
             }
 
-            // Initialize scanner (but don't start yet)
             html5QrCode = new Html5Qrcode("reader");
             
-            // Setup manual input
             const manualInput = document.getElementById('manualInput');
             manualInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') submitManual();
             });
             
-            // Check initial permission state
             checkCameraPermission();
+            enumerateCameras();
         };
 
-        // Check camera permission status
+        // Get available cameras
+        async function enumerateCameras() {
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                cameras = devices.filter(d => d.kind === 'videoinput');
+                
+                const dropdown = document.getElementById('cameraDropdown');
+                dropdown.innerHTML = '';
+                
+                // Prefer back cameras, avoid ultrawide/telephoto initially
+                const backCameras = cameras.filter(c => 
+                    c.label.toLowerCase().includes('back') || 
+                    c.label.toLowerCase().includes('rear') ||
+                    c.label.toLowerCase().includes('environment')
+                );
+                
+                const otherCameras = cameras.filter(c => !backCameras.includes(c));
+                const sortedCameras = [...backCameras, ...otherCameras];
+                
+                sortedCameras.forEach((camera, index) => {
+                    const option = document.createElement('option');
+                    option.value = camera.deviceId;
+                    
+                    // Clean up label
+                    let label = camera.label || `Camera ${index + 1}`;
+                    if (label.length > 30) label = label.substring(0, 30) + '...';
+                    
+                    option.textContent = label;
+                    dropdown.appendChild(option);
+                });
+                
+                if (sortedCameras.length > 0) {
+                    document.getElementById('cameraSelect').style.display = 'block';
+                    currentCameraId = sortedCameras[0].deviceId;
+                }
+                
+            } catch (err) {
+                console.log('Could not enumerate cameras:', err);
+            }
+        }
+
+        function changeCamera() {
+            const dropdown = document.getElementById('cameraDropdown');
+            currentCameraId = dropdown.value;
+            
+            if (isScanning) {
+                stopScanner().then(() => {
+                    setTimeout(startScanner, 500);
+                });
+            }
+        }
+
         async function checkCameraPermission() {
             try {
                 if (navigator.permissions && navigator.permissions.query) {
@@ -773,12 +934,9 @@
                         showPermissionBanner();
                     }
                 }
-            } catch (e) {
-                // Some browsers don't support querying camera permission
-            }
+            } catch (e) {}
         }
 
-        // Show permission banner
         function showPermissionBanner() {
             document.getElementById('permissionBanner').classList.add('show');
         }
@@ -787,23 +945,20 @@
             document.getElementById('permissionBanner').classList.remove('show');
         }
 
-        // Request camera permission explicitly
         async function requestCameraPermission() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { facingMode: "environment" } 
                 });
-                // Permission granted, stop the stream (we'll start properly later)
                 stream.getTracks().forEach(track => track.stop());
                 hidePermissionBanner();
-                showToast('Permission granted! Tap Start Camera', 'success');
+                showToast('Permission granted!', 'success');
+                enumerateCameras(); // Refresh camera list after permission
             } catch (err) {
-                console.error('Permission error:', err);
-                showToast('Permission denied. Please enable in settings.', 'error');
+                showToast('Permission denied', 'error');
             }
         }
 
-        // Show toast
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toast');
             toast.textContent = message;
@@ -816,7 +971,40 @@
             setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
-        // Start scanner with proper error handling
+        // Zoom functions
+        function zoomIn() {
+            if (!videoTrack) return;
+            const capabilities = videoTrack.getCapabilities();
+            if (capabilities.zoom) {
+                const max = capabilities.zoom.max;
+                const step = capabilities.zoom.step || 0.1;
+                currentZoom = Math.min(currentZoom + step, max);
+                applyZoom();
+            }
+        }
+
+        function zoomOut() {
+            if (!videoTrack) return;
+            const capabilities = videoTrack.getCapabilities();
+            if (capabilities.zoom) {
+                const min = capabilities.zoom.min;
+                const step = capabilities.zoom.step || 0.1;
+                currentZoom = Math.max(currentZoom - step, min);
+                applyZoom();
+            }
+        }
+
+        function applyZoom() {
+            if (!videoTrack) return;
+            videoTrack.applyConstraints({
+                advanced: [{ zoom: currentZoom }]
+            }).then(() => {
+                document.getElementById('zoomLevel').textContent = currentZoom.toFixed(1) + 'x';
+            }).catch(err => {
+                console.log('Zoom failed:', err);
+            });
+        }
+
         async function startScanner() {
             const loadingOverlay = document.getElementById('loadingOverlay');
             const reader = document.getElementById('reader');
@@ -826,28 +1014,80 @@
             hidePermissionBanner();
 
             try {
-                // First check if we can get permission
-                await navigator.mediaDevices.getUserMedia({ video: true });
+                // Test permission first
+                const testStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: currentCameraId ? 
+                        { deviceId: { exact: currentCameraId } } : 
+                        { facingMode: "environment" }
+                });
                 
+                // Get the video track for zoom control
+                videoTrack = testStream.getVideoTracks()[0];
+                
+                // Check if zoom is supported
+                const capabilities = videoTrack.getCapabilities();
+                if (capabilities.zoom) {
+                    document.getElementById('zoomControls').classList.add('active');
+                    document.getElementById('zoomLevel').classList.add('active');
+                    // Start with minimum zoom
+                    currentZoom = capabilities.zoom.min || 1.0;
+                    applyZoom();
+                }
+                
+                // Stop test stream, we'll let html5-qrcode handle it
+                testStream.getTracks().forEach(track => track.stop());
+
+                // Config with NO ZOOM - use exact device or environment
                 const config = {
                     fps: 10,
-                    qrbox: { width: 250, height: 150 },
-                    aspectRatio: 1.0,
-                    videoConstraints: {
+                    qrbox: { width: 280, height: 100 }, // Wider, shorter scan area
+                    aspectRatio: 1.777, // 16:9 to match most cameras
+                    videoConstraints: currentCameraId ? {
+                        deviceId: { exact: currentCameraId },
+                        width: { min: 640, ideal: 1280, max: 1920 },
+                        height: { min: 480, ideal: 720, max: 1080 },
+                        zoom: currentZoom // Apply initial zoom
+                    } : {
                         facingMode: { ideal: "environment" },
-                        width: { min: 640, ideal: 1280 },
-                        height: { min: 480, ideal: 720 }
+                        width: { min: 640, ideal: 1280, max: 1920 },
+                        height: { min: 480, ideal: 720, max: 1080 }
                     }
                 };
 
+                // Start with specific camera ID if available
+                const cameraConfig = currentCameraId ? 
+                    { deviceId: { exact: currentCameraId } } : 
+                    { facingMode: "environment" };
+
                 await html5QrCode.start(
-                    { facingMode: "environment" },
+                    cameraConfig,
                     config,
                     onScanSuccess,
                     onScanError
                 );
 
-                // Success - update UI
+                // Get the actual video element and track for zoom control
+                setTimeout(() => {
+                    const video = document.querySelector('#reader video');
+                    if (video && video.srcObject) {
+                        const newTrack = video.srcObject.getVideoTracks()[0];
+                        if (newTrack) {
+                            videoTrack = newTrack;
+                            const caps = videoTrack.getCapabilities();
+                            if (caps.zoom) {
+                                document.getElementById('zoomControls').classList.add('active');
+                                document.getElementById('zoomLevel').classList.add('active');
+                                // Reset to wide angle
+                                currentZoom = caps.min || 1.0;
+                                videoTrack.applyConstraints({
+                                    advanced: [{ zoom: currentZoom }]
+                                });
+                                document.getElementById('zoomLevel').textContent = currentZoom.toFixed(1) + 'x';
+                            }
+                        }
+                    }
+                }, 1000);
+
                 isScanning = true;
                 reader.classList.add('active');
                 placeholder.style.display = 'none';
@@ -855,7 +1095,6 @@
                 document.getElementById('startBtn').disabled = true;
                 document.getElementById('stopBtn').disabled = false;
                 
-                // Request wake lock
                 if ('wakeLock' in navigator) {
                     wakeLock = await navigator.wakeLock.request('screen');
                 }
@@ -865,33 +1104,62 @@
             } catch (err) {
                 console.error('Camera error:', err);
                 
-                // Handle specific errors
                 let errorMsg = 'Camera error';
                 
                 if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                    errorMsg = 'Camera permission denied. Please allow access in settings.';
-                    showPermissionBanner();
-                } else if (err.name === 'NotFoundError') {
-                    errorMsg = 'No camera found on this device';
-                } else if (err.name === 'NotReadableError') {
-                    errorMsg = 'Camera is in use by another app';
-                } else if (err.name === 'OverconstrainedError') {
-                    errorMsg = 'Camera constraints not supported';
-                } else if (err.message && err.message.includes('Permission')) {
                     errorMsg = 'Permission denied. Please allow camera access.';
                     showPermissionBanner();
+                } else if (err.name === 'NotFoundError') {
+                    errorMsg = 'Camera not found';
+                } else if (err.name === 'NotReadableError') {
+                    errorMsg = 'Camera in use by another app';
+                } else if (err.name === 'OverconstrainedError') {
+                    // Try with simpler constraints
+                    errorMsg = 'Trying basic camera...';
+                    showToast(errorMsg, 'error');
+                    setTimeout(() => startSimpleCamera(), 500);
+                    return;
                 } else {
-                    errorMsg = 'Error: ' + (err.message || 'Unknown error');
+                    errorMsg = err.message || 'Unknown error';
                 }
                 
                 showToast(errorMsg, 'error');
-                
             } finally {
                 loadingOverlay.classList.remove('active');
             }
         }
 
-        // Stop scanner
+        // Fallback with minimal constraints
+        async function startSimpleCamera() {
+            try {
+                const config = {
+                    fps: 10,
+                    qrbox: { width: 250, height: 100 },
+                    aspectRatio: 1.333
+                };
+
+                await html5QrCode.start(
+                    { facingMode: "environment" },
+                    config,
+                    onScanSuccess,
+                    onScanError
+                );
+
+                isScanning = true;
+                document.getElementById('reader').classList.add('active');
+                document.getElementById('placeholder').style.display = 'none';
+                document.getElementById('scanOverlay').classList.add('active');
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+                
+                showToast('Camera started (basic mode)', 'success');
+            } catch (err) {
+                showToast('Failed to start camera: ' + err.message, 'error');
+            } finally {
+                document.getElementById('loadingOverlay').classList.remove('active');
+            }
+        }
+
         async function stopScanner() {
             try {
                 await html5QrCode.stop();
@@ -900,8 +1168,13 @@
                 document.getElementById('reader').classList.remove('active');
                 document.getElementById('placeholder').style.display = 'block';
                 document.getElementById('scanOverlay').classList.remove('active');
+                document.getElementById('zoomControls').classList.remove('active');
+                document.getElementById('zoomLevel').classList.remove('active');
                 document.getElementById('startBtn').disabled = false;
                 document.getElementById('stopBtn').disabled = true;
+                
+                videoTrack = null;
+                currentZoom = 1.0;
                 
                 if (wakeLock) {
                     wakeLock.release();
@@ -914,14 +1187,12 @@
             }
         }
 
-        // Scan handlers
         function onScanSuccess(decodedText, decodedResult) {
             if (recentBarcodes.has(decodedText)) return;
             
             recentBarcodes.add(decodedText);
             setTimeout(() => recentBarcodes.delete(decodedText), 3000);
             
-            // Visual feedback
             const frame = document.querySelector('.scan-frame');
             frame.style.borderColor = '#00ff00';
             setTimeout(() => frame.style.borderColor = 'rgba(255,255,255,0.3)', 500);
@@ -929,11 +1200,8 @@
             processBarcode(decodedText, 'camera');
         }
 
-        function onScanError(error) {
-            // Ignore continuous errors
-        }
+        function onScanError(error) {}
 
-        // Manual submit
         function submitManual() {
             const input = document.getElementById('manualInput');
             const barcode = input.value.trim();
@@ -948,7 +1216,6 @@
             processBarcode(barcode, 'manual');
         }
 
-        // Process barcode
         async function processBarcode(barcode, source) {
             const scanId = Date.now();
             const timestamp = new Date().toLocaleTimeString();
@@ -999,7 +1266,6 @@
             updateStats();
         }
 
-        // UI functions
         function addScanItem(scan) {
             scanHistory.unshift(scan);
             if (scanHistory.length > 50) scanHistory.pop();
@@ -1075,14 +1341,7 @@
             document.getElementById('statFailed').textContent = stats.failed;
         }
 
-        // Handle visibility change
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden && isScanning) {
-                // Optional: pause when backgrounded
-            }
-        });
-
-        // Prevent pull-to-refresh
+        // Pull to refresh prevention
         let touchStartY = 0;
         document.addEventListener('touchstart', e => {
             touchStartY = e.touches[0].clientY;

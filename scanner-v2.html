@@ -1,0 +1,1657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#667eea">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Factory Tour Scanner</title>
+  
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #000;
+            position: fixed;
+        }
+        #app {
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            background: #f5f7fa;
+            overflow: hidden;
+        }
+       
+        /* Dynamic Themes */
+        .theme-blue .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .theme-blue .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        .theme-blue .event-option.selected {
+            border-color: #667eea;
+            background: #f0f4ff;
+            color: #667eea;
+        }
+        .theme-blue .input-field:focus {
+            border-color: #667eea;
+        }
+        .theme-blue .stat-value {
+            color: #667eea;
+        }
+        .theme-blue .info-value.highlight {
+            color: #667eea;
+        }
+        .theme-blue .retry-btn {
+            background: #667eea;
+        }
+        .theme-blue .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+       
+        .theme-orange .header {
+            background: linear-gradient(135deg, #f6ad55 0%, #ed8936 100%);
+        }
+        .theme-orange .btn-primary {
+            background: linear-gradient(135deg, #f6ad55 0%, #ed8936 100%);
+            box-shadow: 0 4px 15px rgba(237, 137, 54, 0.4);
+        }
+        .theme-orange .event-option.selected {
+            border-color: #ed8936;
+            background: #fffaf0;
+            color: #c05621;
+        }
+        .theme-orange .input-field:focus {
+            border-color: #ed8936;
+        }
+        .theme-orange .stat-value {
+            color: #ed8936;
+        }
+        .theme-orange .info-value.highlight {
+            color: #ed8936;
+        }
+        .theme-orange .retry-btn {
+            background: #ed8936;
+        }
+        .theme-orange .modal-header {
+            background: linear-gradient(135deg, #f6ad55 0%, #ed8936 100%);
+        }
+        .theme-orange .loading-overlay .spinner {
+            border-top-color: #ed8936;
+        }
+       
+        .header {
+            color: white;
+            padding: 12px 16px;
+            padding-top: env(safe-area-inset-top, 12px);
+            text-align: center;
+            flex-shrink: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        .header h1 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        .header p {
+            font-size: 0.75rem;
+            opacity: 0.9;
+        }
+        .header-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .header-btn:active {
+            transform: translateY(-50%) scale(0.9);
+            background: rgba(255,255,255,0.3);
+        }
+        .test-header-btn {
+            left: 16px;
+        }
+        .settings-btn {
+            right: 16px;
+        }
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 12px;
+            padding-bottom: env(safe-area-inset-bottom, 12px);
+        }
+        /* Permission Banner */
+        .permission-banner {
+            background: #fed7d7;
+            border: 1px solid #fc8181;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            display: none;
+        }
+        .permission-banner.show {
+            display: block;
+            animation: shake 0.5s;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        .permission-title {
+            font-weight: 700;
+            color: #c53030;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .permission-text {
+            font-size: 0.85rem;
+            color: #742a2a;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+        .permission-btn {
+            background: #c53030;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+        /* Scanner Section */
+        .scanner-wrapper {
+            background: #000;
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 12px;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            aspect-ratio: 4/3;
+            max-height: 50vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .scanner-placeholder {
+            text-align: center;
+            color: #718096;
+            padding: 40px;
+        }
+        .scanner-placeholder-icon {
+            font-size: 4rem;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        #reader {
+            width: 100%;
+            height: 100%;
+            display: none;
+        }
+        #reader.active {
+            display: block;
+        }
+        #reader video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            border-radius: 16px;
+        }
+        /* Scan Overlay */
+        .scan-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .scan-overlay.active {
+            display: flex;
+        }
+        .scan-frame {
+            width: 80%;
+            max-width: 340px;
+            aspect-ratio: 1.6;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        .scan-corners::before,
+        .scan-corners::after,
+        .scan-corners-bottom::before,
+        .scan-corners-bottom::after {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-color: #00ff00;
+            border-style: solid;
+            border-width: 0;
+        }
+        .scan-corners::before {
+            top: 0;
+            left: 0;
+            border-top-width: 4px;
+            border-left-width: 4px;
+        }
+        .scan-corners::after {
+            top: 0;
+            right: 0;
+            border-top-width: 4px;
+            border-right-width: 4px;
+        }
+        .scan-corners-bottom::before {
+            bottom: 0;
+            left: 0;
+            border-bottom-width: 4px;
+            border-left-width: 4px;
+        }
+        .scan-corners-bottom::after {
+            bottom: 0;
+            right: 0;
+            border-bottom-width: 4px;
+            border-right-width: 4px;
+        }
+        .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00ff00, transparent);
+            box-shadow: 0 0 10px #00ff00;
+            animation: scan 2s linear infinite;
+            top: 0;
+        }
+        @keyframes scan {
+            0% { top: 0; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+        .scan-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+        }
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .btn {
+            flex: 1;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            -webkit-appearance: none;
+            min-height: 52px;
+            touch-action: manipulation;
+        }
+        .btn:active {
+            transform: scale(0.96);
+        }
+        .btn-primary {
+            color: white;
+        }
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(245, 101, 101, 0.4);
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(237, 137, 54, 0.4);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+        /* Event Type Selector */
+        .event-section {
+            background: white;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .event-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #718096;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        .event-options {
+            display: flex;
+            gap: 10px;
+        }
+        .event-option {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+        }
+        .event-option:active {
+            transform: scale(0.98);
+        }
+        .event-option-title {
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 2px;
+        }
+        .event-option-desc {
+            font-size: 0.7rem;
+            color: #718096;
+        }
+        /* Manual Input */
+        .manual-section {
+            background: white;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .section-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #718096;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        .input-row {
+            display: flex;
+            gap: 8px;
+        }
+        .input-field {
+            flex: 1;
+            padding: 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: inherit;
+            -webkit-appearance: none;
+            transition: border-color 0.2s;
+            min-height: 52px;
+        }
+        /* Recent Scans */
+        .scans-section {
+            background: white;
+            border-radius: 12px;
+            padding: 12px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 200px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .scans-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .scans-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #2d3748;
+        }
+        .clear-btn {
+            font-size: 0.75rem;
+            color: #e53e3e;
+            background: none;
+            border: none;
+            padding: 4px 8px;
+            cursor: pointer;
+        }
+        .scan-list {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            max-height: 35vh;
+        }
+        .scan-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            background: #f7fafc;
+            border-left: 4px solid #cbd5e0;
+            animation: slideIn 0.3s ease;
+            min-height: 60px;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .scan-item.success {
+            background: #f0fff4;
+            border-left-color: #48bb78;
+        }
+        .scan-item.error {
+            background: #fff5f5;
+            border-left-color: #f56565;
+        }
+        .scan-item.pending {
+            background: #fffaf0;
+            border-left-color: #ed8936;
+        }
+        .scan-item.redeemed {
+            background: #e6fffa;
+            border-left-color: #38b2ac;
+        }
+        .scan-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        .scan-icon.success { background: #c6f6d5; }
+        .scan-icon.error { background: #fed7d7; }
+        .scan-icon.pending { background: #feebc8; }
+        .scan-icon.redeemed { background: #b2f5ea; }
+        .scan-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .scan-barcode {
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: #2d3748;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .scan-meta {
+            font-size: 0.75rem;
+            color: #718096;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .scan-status {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 4px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+        .scan-status.success {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        .scan-status.error {
+            background: #fed7d7;
+            color: #c53030;
+        }
+        .scan-status.pending {
+            background: #feebc8;
+            color: #c05621;
+        }
+        .scan-status.redeemed {
+            background: #b2f5ea;
+            color: #234e52;
+        }
+        .retry-btn {
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+        /* Stats Bar */
+        .stats-bar {
+            display: flex;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            padding: 10px;
+            padding-bottom: env(safe-area-inset-bottom, 10px);
+            flex-shrink: 0;
+        }
+        .stat {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+        }
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+        .stat-label {
+            font-size: 0.65rem;
+            color: #718096;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: #2d3748;
+            color: white;
+            padding: 14px 28px;
+            border-radius: 50px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            pointer-events: none;
+            white-space: nowrap;
+            max-width: 90vw;
+            text-align: center;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .toast.success { background: #48bb78; }
+        .toast.error { background: #f56565; }
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #a0aec0;
+        }
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+        /* Loading */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: white;
+            z-index: 50;
+        }
+        .loading-overlay.active {
+            display: flex;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        /* Settings Modal */
+        .settings-content {
+            background: white;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 400px;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .settings-header {
+            background: #2d3748;
+            color: white;
+            padding: 20px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .settings-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+        .settings-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        .settings-close:active {
+            background: rgba(255,255,255,0.1);
+        }
+        .settings-body {
+            padding: 24px;
+        }
+        .settings-section {
+            margin-bottom: 24px;
+        }
+        .settings-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 8px;
+            display: block;
+        }
+        .settings-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-family: monospace;
+            transition: border-color 0.2s;
+        }
+        .settings-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .settings-save {
+            width: 100%;
+            background: #48bb78;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .settings-save:active {
+            transform: scale(0.98);
+        }
+        /* Modal / Popup - FIXED FOR NO SCROLL + CONFIRM ALWAYS VISIBLE */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 20px;
+            backdrop-filter: blur(4px);
+        }
+        .modal-overlay.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 400px;
+            max-height: 92vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;           /* No scroll on whole modal */
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .modal-header {
+            color: white;
+            padding: 24px;
+            text-align: center;
+            position: relative;
+            flex-shrink: 0;             /* Header stays visible */
+        }
+        .modal-header.success {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        }
+        .modal-header.error {
+            background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+        }
+        .modal-icon {
+            font-size: 4rem;
+            margin-bottom: 10px;
+        }
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        .modal-subtitle {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        .modal-body {
+            padding: 20px 24px;
+            flex: 1;                    /* Takes remaining space */
+            overflow-y: auto;           /* Only body scrolls (if ever needed) */
+            -webkit-overflow-scrolling: touch;
+            min-height: 0;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            font-size: 0.85rem;
+            color: #718096;
+            font-weight: 500;
+        }
+        .info-value {
+            font-size: 0.95rem;
+            color: #2d3748;
+            font-weight: 700;
+            text-align: right;
+            max-width: 60%;
+        }
+        .info-value.success {
+            color: #48bb78;
+        }
+        .info-value.error {
+            color: #f56565;
+        }
+        .reward-box {
+            background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+            border: 2px solid #48bb78;
+            border-radius: 12px;
+            padding: 16px;              /* Slightly smaller */
+            margin: 16px 0;
+            text-align: center;
+        }
+        .reward-box.error {
+            background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+            border-color: #f56565;
+        }
+        .reward-icon {
+            font-size: 3rem;
+            margin-bottom: 8px;
+        }
+        .reward-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #22543d;
+            margin-bottom: 5px;
+        }
+        .reward-title.error {
+            color: #c53030;
+        }
+        .reward-desc {
+            font-size: 0.9rem;
+            color: #2f855a;
+        }
+        .reward-desc.error {
+            color: #9b2c2c;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            padding: 16px 24px 28px;    /* Bottom padding for safe area */
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            flex-shrink: 0;             /* Buttons ALWAYS visible */
+        }
+        .modal-actions .btn {
+            flex: 1;
+            min-height: 52px;
+        }
+        /* iOS Safe Area */
+        @supports (-webkit-touch-callout: none) {
+            .header {
+                padding-top: max(20px, env(safe-area-inset-top));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="theme-blue">
+        <div class="header">
+            <button class="header-btn test-header-btn" onclick="runTestScan()" title="Test">🧪</button>
+            <h1>🏭 Factory Tour Scanner</h1>
+            <p>Scan customer barcodes</p>
+            <button class="header-btn settings-btn" onclick="openSettings()" title="Settings">⚙️</button>
+        </div>
+        <div class="content">
+            <!-- Permission Banner -->
+            <div class="permission-banner" id="permissionBanner">
+                <div class="permission-title">⚠️ Camera Access Required</div>
+                <div class="permission-text">
+                    This app needs camera permission to scan barcodes. Please allow access when prompted, or check your browser settings.
+                </div>
+                <button class="permission-btn" onclick="requestCameraPermission()">
+                    Allow Camera Access
+                </button>
+            </div>
+            <div class="scanner-wrapper" id="scannerWrapper">
+                <div class="scanner-placeholder" id="placeholder">
+                    <div class="scanner-placeholder-icon">📷</div>
+                    <div>Camera is off</div>
+                    <div style="font-size: 0.85rem; margin-top: 5px; opacity: 0.7;">Tap "Start Camera" to begin</div>
+                </div>
+                <div id="reader"></div>
+                <div class="scan-overlay" id="scanOverlay">
+                    <div class="scan-frame">
+                        <div class="scan-corners"></div>
+                        <div class="scan-corners-bottom"></div>
+                        <div class="scan-line"></div>
+                    </div>
+                    <div class="scan-hint">Align barcode within frame</div>
+                </div>
+                <div class="loading-overlay" id="loadingOverlay">
+                    <div class="spinner"></div>
+                    <div>Starting camera...</div>
+                </div>
+            </div>
+            <div class="controls">
+                <button class="btn btn-primary" id="startBtn" onclick="startScanner()">
+                    <span>▶️</span> Start Camera
+                </button>
+                <button class="btn btn-secondary" id="stopBtn" onclick="stopScanner()" disabled>
+                    <span>⏹️</span> Stop
+                </button>
+            </div>
+           
+            <!-- Event Type Selector -->
+            <div class="event-section">
+                <div class="event-label">🎯 Select Event Type</div>
+                <div class="event-options">
+                    <div class="event-option selected" onclick="selectEventType('1')" id="eventType1">
+                        <div class="event-option-title">🏭 Factory Visit</div>
+                        <div class="event-option-desc">Morning Factory Tour</div>
+                    </div>
+                    <div class="event-option" onclick="selectEventType('2')" id="eventType2">
+                        <div class="event-option-title">🍽️ Dinner</div>
+                        <div class="event-option-desc">Evening Dinner Event</div>
+                    </div>
+                </div>
+            </div>
+            <div class="manual-section">
+                <div class="section-label">⌨️ Manual Entry</div>
+                <div class="input-row">
+                    <input type="text" class="input-field" id="manualInput"
+                           placeholder="Enter barcode..." autocomplete="off" inputmode="numeric">
+                    <button class="btn btn-primary" onclick="submitManual()" style="flex: 0 0 auto; padding: 14px 20px;">
+                        Go
+                    </button>
+                </div>
+            </div>
+            <div class="scans-section">
+                <div class="scans-header">
+                    <div class="scans-title">📋 Recent Scans</div>
+                    <button class="clear-btn" onclick="clearScans()">Clear</button>
+                </div>
+                <div class="scan-list" id="scanList">
+                    <div class="empty-state">
+                        <div class="empty-icon">📷</div>
+                        <div class="empty-text">Ready to scan</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="stats-bar">
+            <div class="stat">
+                <div class="stat-value" id="statTotal">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="statSuccess" style="color: #48bb78;">0</div>
+                <div class="stat-label">Valid</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="statFailed" style="color: #f56565;">0</div>
+                <div class="stat-label">Invalid</div>
+            </div>
+        </div>
+    </div>
+   
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="settings-content">
+            <div class="settings-header">
+                <div class="settings-title">⚙️ Settings</div>
+                <button class="settings-close" onclick="closeSettings()">✕</button>
+            </div>
+            <div class="settings-body">
+                <div class="settings-section">
+                    <label class="settings-label">🔗 API Endpoint</label>
+                    <input type="text" class="settings-input" id="apiEndpoint"
+                           placeholder="https://api.example.com/validate"
+                           value="https://httpbin.org/post">
+                    <p style="font-size: 0.75rem; color: #718096; margin-top: 6px;">
+                        Endpoint for validating barcodes. Must accept POST requests with JSON body.
+                    </p>
+                </div>
+                <button class="settings-save" onclick="saveSettings()">
+                    💾 Save Settings
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- Result Modal -->
+    <div class="modal-overlay" id="resultModal">
+        <div class="modal-content">
+            <div class="modal-header" id="modalHeader">
+                <div class="modal-icon" id="modalIcon">🎁</div>
+                <div class="modal-title" id="modalTitle">Valid Barcode!</div>
+                <div class="modal-subtitle" id="modalSubtitle">Eligible for reward</div>
+            </div>
+            <div class="modal-body">
+                <div class="info-row">
+                    <span class="info-label">Barcode</span>
+                    <span class="info-value highlight" id="modalBarcode">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Event Type</span>
+                    <span class="info-value" id="modalEventType">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Quantity</span>
+                    <span class="info-value" id="modalQuantity">1</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Status</span>
+                    <span class="info-value" id="modalStatus">-</span>
+                </div>
+                <div class="reward-box" id="rewardBox">
+                    <div class="reward-icon" id="rewardIcon">🎁</div>
+                    <div class="reward-title" id="rewardTitle">Premium Gift Box</div>
+                    <div class="reward-desc" id="rewardDesc">You are eligible to receive this item</div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-success" onclick="confirmRedemption()" id="confirmBtn">
+                    <span>✓</span> Confirm Redemption
+                </button>
+            </div>
+        </div>
+    </div>
+    <script>
+        let html5QrCode;
+        let isScanning = false;
+        let scanHistory = [];
+        let stats = { total: 0, success: 0, failed: 0 };
+        let recentBarcodes = new Set();
+        let wakeLock = null;
+        let currentEventType = '1';
+        let pendingScan = null;
+        let isProcessing = false;
+        // Dynamic qrbox size (70% of smaller dimension)
+        function getQrBox(viewfinderWidth, viewfinderHeight) {
+            let minDimension = Math.min(viewfinderWidth, viewfinderHeight);
+            let boxSize = minDimension * 0.70;
+            return {
+                width: boxSize,
+                height: boxSize * 0.58
+            };
+        }
+        // Initialize
+        window.onload = function() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                showToast('Camera not supported on this device', 'error');
+                document.getElementById('startBtn').disabled = true;
+                return;
+            }
+            html5QrCode = new Html5Qrcode("reader");
+          
+            const manualInput = document.getElementById('manualInput');
+            manualInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') submitManual();
+            });
+          
+            checkCameraPermission();
+        };
+        function selectEventType(type) {
+            currentEventType = type;
+            document.querySelectorAll('.event-option').forEach(el => el.classList.remove('selected'));
+            document.getElementById('eventType' + type).classList.add('selected');
+           
+            // Change theme
+            const app = document.getElementById('app');
+            if (type === '1') {
+                app.className = 'theme-blue';
+                showToast('Factory Visit selected', 'success');
+            } else {
+                app.className = 'theme-orange';
+                showToast('Dinner selected', 'success');
+            }
+        }
+        // Settings Functions
+        function openSettings() {
+            document.getElementById('settingsModal').classList.add('active');
+        }
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.remove('active');
+        }
+        function saveSettings() {
+            const endpoint = document.getElementById('apiEndpoint').value;
+            if (!endpoint) {
+                showToast('Please enter a valid API endpoint', 'error');
+                return;
+            }
+            closeSettings();
+            showToast('Settings saved', 'success');
+        }
+        // Test Function with Dummy Data
+        function runTestScan() {
+            const testBarcode = 'TEST' + Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+           
+            // Create dummy response based on event type
+            const dummyResponse = {
+                success: true,
+                data: {
+                    barcode: testBarcode,
+                    eligible: true,
+                    item_name: currentEventType === '1' ? 'Factory Tour Welcome Kit' : 'Dinner Premium Set',
+                    item_description: currentEventType === '1'
+                        ? 'Exclusive factory tour merchandise package including safety gear and souvenirs'
+                        : 'Gourmet dinner set with complimentary beverage and dessert',
+                    quantity: currentEventType === '1' ? 1 : 2,
+                    event_type: currentEventType,
+                    message: currentEventType === '1'
+                        ? 'Welcome to the Factory Tour! Enjoy your visit.'
+                        : 'Enjoy your dinner! Bon appétit.'
+                }
+            };
+           
+            // Simulate API delay
+            showToast('Testing...', 'success');
+           
+            setTimeout(() => {
+                const scanId = Date.now();
+                const timestamp = new Date().toLocaleTimeString();
+               
+                addScanItem({
+                    id: scanId,
+                    barcode: testBarcode,
+                    timestamp: timestamp,
+                    source: 'test',
+                    status: 'pending',
+                    eventType: currentEventType
+                });
+               
+                // Store pending scan
+                pendingScan = {
+                    scanId: scanId,
+                    barcode: testBarcode,
+                    apiResponse: dummyResponse.data,
+                    timestamp: timestamp
+                };
+               
+                // Show modal with result
+                showResultModal(dummyResponse.data, testBarcode);
+                updateScanStatus(scanId, 'success', dummyResponse);
+                stats.success++;
+                stats.total++;
+                updateStats();
+            }, 600);
+        }
+        async function checkCameraPermission() {
+            try {
+                if (navigator.permissions && navigator.permissions.query) {
+                    const result = await navigator.permissions.query({ name: 'camera' });
+                    if (result.state === 'denied') {
+                        showPermissionBanner();
+                    }
+                }
+            } catch (e) {}
+        }
+        function showPermissionBanner() {
+            document.getElementById('permissionBanner').classList.add('show');
+        }
+        function hidePermissionBanner() {
+            document.getElementById('permissionBanner').classList.remove('show');
+        }
+        async function requestCameraPermission() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: "environment" }
+                });
+                stream.getTracks().forEach(track => track.stop());
+                hidePermissionBanner();
+                showToast('Permission granted! Tap Start Camera', 'success');
+            } catch (err) {
+                console.error('Permission error:', err);
+                showToast('Permission denied. Please enable in settings.', 'error');
+            }
+        }
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+          
+            if (navigator.vibrate) {
+                navigator.vibrate(type === 'success' ? [50, 100, 50] : [100, 50, 100]);
+            }
+          
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+        async function startScanner() {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const reader = document.getElementById('reader');
+            const placeholder = document.getElementById('placeholder');
+          
+            loadingOverlay.classList.add('active');
+            hidePermissionBanner();
+            try {
+                await navigator.mediaDevices.getUserMedia({ video: true });
+              
+                const config = {
+                    fps: 12,
+                    qrbox: getQrBox,
+                    aspectRatio: 1.5,
+                    videoConstraints: {
+                        facingMode: { ideal: "environment" },
+                        width: { ideal: 854 },
+                        height: { ideal: 480 }
+                    }
+                };
+                await html5QrCode.start(
+                    { facingMode: "environment" },
+                    config,
+                    onScanSuccess,
+                    onScanError
+                );
+                isScanning = true;
+                reader.classList.add('active');
+                placeholder.style.display = 'none';
+                document.getElementById('scanOverlay').classList.add('active');
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+              
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                }
+              
+                showToast('Camera started', 'success');
+              
+            } catch (err) {
+                console.error('Camera error:', err);
+                let errorMsg = 'Camera error';
+              
+                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                    errorMsg = 'Camera permission denied. Please allow access in settings.';
+                    showPermissionBanner();
+                } else if (err.name === 'NotFoundError') {
+                    errorMsg = 'No camera found on this device';
+                } else if (err.name === 'NotReadableError') {
+                    errorMsg = 'Camera is in use by another app';
+                } else if (err.name === 'OverconstrainedError') {
+                    errorMsg = 'Camera settings not supported';
+                } else {
+                    errorMsg = 'Error: ' + (err.message || 'Unknown error');
+                }
+              
+                showToast(errorMsg, 'error');
+            } finally {
+                loadingOverlay.classList.remove('active');
+            }
+        }
+        async function stopScanner() {
+            try {
+                await html5QrCode.stop();
+              
+                isScanning = false;
+                document.getElementById('reader').classList.remove('active');
+                document.getElementById('placeholder').style.display = 'block';
+                document.getElementById('scanOverlay').classList.remove('active');
+                document.getElementById('startBtn').disabled = false;
+                document.getElementById('stopBtn').disabled = true;
+              
+                if (wakeLock) {
+                    wakeLock.release();
+                    wakeLock = null;
+                }
+              
+                showToast('Camera stopped', 'success');
+            } catch (err) {
+                console.error('Stop error:', err);
+            }
+        }
+        function onScanSuccess(decodedText, decodedResult) {
+            if (isProcessing) return;
+            if (recentBarcodes.has(decodedText)) return;
+          
+            recentBarcodes.add(decodedText);
+            setTimeout(() => recentBarcodes.delete(decodedText), 3000);
+          
+            const frame = document.querySelector('.scan-frame');
+            frame.style.borderColor = '#00ff00';
+            setTimeout(() => frame.style.borderColor = 'rgba(255,255,255,0.3)', 500);
+          
+            processBarcode(decodedText, 'camera');
+        }
+        function onScanError(error) {
+            // silent
+        }
+        function submitManual() {
+            const input = document.getElementById('manualInput');
+            const barcode = input.value.trim();
+          
+            if (!barcode) {
+                showToast('Enter barcode first', 'error');
+                return;
+            }
+          
+            input.value = '';
+            input.blur();
+            processBarcode(barcode, 'manual');
+        }
+        async function processBarcode(barcode, source) {
+            if (isProcessing) return;
+            isProcessing = true;
+           
+            const scanId = Date.now();
+            const timestamp = new Date().toLocaleTimeString();
+          
+            addScanItem({
+                id: scanId,
+                barcode: barcode,
+                timestamp: timestamp,
+                source: source,
+                status: 'pending',
+                eventType: currentEventType
+            });
+          
+            const apiUrl = document.getElementById('apiEndpoint').value || 'https://httpbin.org/post';
+          
+            try {
+                showToast('Validating...', 'success');
+               
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        barcode: barcode,
+                        event_type: currentEventType,
+                        timestamp: new Date().toISOString(),
+                        source: source,
+                        device: navigator.userAgent,
+                        scan_id: scanId,
+                        platform: /iPhone|iPad|iPod/.test(navigator.userAgent) ? 'iOS' :
+                                  /Android/.test(navigator.userAgent) ? 'Android' : 'Other'
+                    })
+                });
+              
+                let data;
+                try {
+                    data = await response.json();
+                    // Handle httpbin response format
+                    if (data.json) {
+                        data = {
+                            success: true,
+                            data: {
+                                barcode: barcode,
+                                eligible: true,
+                                item_name: currentEventType === '1' ? 'Factory Tour Welcome Kit' : 'Dinner Premium Set',
+                                item_description: 'Auto-generated from API response',
+                                quantity: 1,
+                                event_type: currentEventType,
+                                message: 'Valid barcode!'
+                            }
+                        };
+                    }
+                } catch (e) {
+                    data = {
+                        success: true,
+                        data: {
+                            barcode: barcode,
+                            eligible: true,
+                            item_name: currentEventType === '1' ? 'Factory Tour Welcome Kit' : 'Dinner Premium Set',
+                            item_description: 'Default reward item',
+                            quantity: 1,
+                            event_type: currentEventType,
+                            message: 'Valid barcode!'
+                        }
+                    };
+                }
+              
+                if (response.ok && data.success) {
+                    pendingScan = {
+                        scanId: scanId,
+                        barcode: barcode,
+                        apiResponse: data.data,
+                        timestamp: timestamp
+                    };
+                   
+                    showResultModal(data.data, barcode);
+                    updateScanStatus(scanId, 'success', data);
+                    stats.success++;
+                } else {
+                    throw new Error(data.message || 'Invalid barcode or not eligible');
+                }
+            } catch (error) {
+                updateScanStatus(scanId, 'error', error.message);
+                stats.failed++;
+                showToast(`✗ ${barcode} - ${error.message}`, 'error');
+                showErrorModal(barcode, error.message);
+            }
+          
+            stats.total++;
+            updateStats();
+            isProcessing = false;
+        }
+        function showResultModal(data, barcode) {
+            const modal = document.getElementById('resultModal');
+            const header = document.getElementById('modalHeader');
+            const icon = document.getElementById('modalIcon');
+            const title = document.getElementById('modalTitle');
+            const subtitle = document.getElementById('modalSubtitle');
+            const rewardBox = document.getElementById('rewardBox');
+            const confirmBtn = document.getElementById('confirmBtn');
+           
+            document.getElementById('modalBarcode').textContent = barcode;
+            document.getElementById('modalEventType').textContent = currentEventType === '1' ? '🏭 Factory Visit' : '🍽️ Dinner';
+            document.getElementById('modalQuantity').textContent = data.quantity || 1;
+            document.getElementById('modalStatus').textContent = data.eligible ? '✓ Eligible' : '✗ Not Eligible';
+            document.getElementById('modalStatus').className = 'info-value ' + (data.eligible ? 'success' : 'error');
+           
+            if (data.eligible) {
+                header.className = 'modal-header success';
+                icon.textContent = currentEventType === '1' ? '🏭' : '🍽️';
+                title.textContent = 'Valid Barcode!';
+                subtitle.textContent = currentEventType === '1' ? 'Welcome to Factory Tour' : 'Enjoy Your Dinner';
+               
+                rewardBox.className = 'reward-box';
+                rewardBox.style.display = 'block';
+                document.getElementById('rewardIcon').textContent = currentEventType === '1' ? '🎁' : '🍷';
+                document.getElementById('rewardTitle').textContent = data.item_name || 'Reward Item';
+                document.getElementById('rewardTitle').className = 'reward-title';
+                document.getElementById('rewardDesc').textContent = data.item_description || 'You are eligible to receive this item';
+                document.getElementById('rewardDesc').className = 'reward-desc';
+               
+                confirmBtn.style.display = 'flex';
+                confirmBtn.innerHTML = '<span>✓</span> Confirm Redemption';
+                confirmBtn.onclick = confirmRedemption;
+            } else {
+                header.className = 'modal-header error';
+                icon.textContent = '❌';
+                title.textContent = 'Not Eligible';
+                subtitle.textContent = 'Barcode validation failed';
+               
+                rewardBox.className = 'reward-box error';
+                rewardBox.style.display = 'block';
+                document.getElementById('rewardIcon').textContent = '⚠️';
+                document.getElementById('rewardTitle').textContent = 'Not Eligible';
+                document.getElementById('rewardTitle').className = 'reward-title error';
+                document.getElementById('rewardDesc').textContent = data.message || 'This barcode is not eligible';
+                document.getElementById('rewardDesc').className = 'reward-desc error';
+               
+                confirmBtn.style.display = 'none';
+            }
+           
+            modal.classList.add('active');
+           
+            if (navigator.vibrate) {
+                navigator.vibrate([100, 50, 100, 50, 200]);
+            }
+        }
+        function showErrorModal(barcode, errorMessage) {
+            const modal = document.getElementById('resultModal');
+            const header = document.getElementById('modalHeader');
+            const confirmBtn = document.getElementById('confirmBtn');
+           
+            document.getElementById('modalBarcode').textContent = barcode;
+            document.getElementById('modalEventType').textContent = currentEventType === '1' ? '🏭 Factory Visit' : '🍽️ Dinner';
+            document.getElementById('modalQuantity').textContent = '-';
+            document.getElementById('modalStatus').textContent = '✗ Error';
+            document.getElementById('modalStatus').className = 'info-value error';
+           
+            header.className = 'modal-header error';
+            document.getElementById('modalIcon').textContent = '❌';
+            document.getElementById('modalTitle').textContent = 'Validation Failed';
+            document.getElementById('modalSubtitle').textContent = 'Unable to verify barcode';
+           
+            const rewardBox = document.getElementById('rewardBox');
+            rewardBox.className = 'reward-box error';
+            rewardBox.style.display = 'block';
+            document.getElementById('rewardIcon').textContent = '⚠️';
+            document.getElementById('rewardTitle').textContent = 'Error';
+            document.getElementById('rewardTitle').className = 'reward-title error';
+            document.getElementById('rewardDesc').textContent = errorMessage || 'Failed to validate barcode';
+            document.getElementById('rewardDesc').className = 'reward-desc error';
+           
+            confirmBtn.style.display = 'none';
+           
+            modal.classList.add('active');
+        }
+        function closeModal() {
+            document.getElementById('resultModal').classList.remove('active');
+            pendingScan = null;
+        }
+        async function confirmRedemption() {
+            if (!pendingScan) return;
+           
+            const scan = scanHistory.find(s => s.id === pendingScan.scanId);
+            if (scan) {
+                scan.status = 'redeemed';
+                scan.redeemedAt = new Date().toISOString();
+                renderScans();
+            }
+           
+            showToast(`✓ Redeemed: ${pendingScan.apiResponse.item_name}`, 'success');
+            closeModal();
+           
+            try {
+                const apiUrl = document.getElementById('apiEndpoint').value;
+                await fetch(apiUrl.replace('/validate', '/redeem') || apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        barcode: pendingScan.barcode,
+                        scan_id: pendingScan.scanId,
+                        confirmed_at: new Date().toISOString(),
+                        event_type: currentEventType
+                    })
+                });
+            } catch (e) {
+                console.log('Redemption confirmation failed');
+            }
+        }
+        function addScanItem(scan) {
+            scanHistory.unshift(scan);
+            if (scanHistory.length > 50) scanHistory.pop();
+            renderScans();
+        }
+        function updateScanStatus(id, status, data) {
+            const scan = scanHistory.find(s => s.id === id);
+            if (scan) {
+                scan.status = status;
+                scan.response = data;
+                renderScans();
+            }
+        }
+        function renderScans() {
+            const list = document.getElementById('scanList');
+          
+            if (scanHistory.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📷</div>
+                        <div class="empty-text">Ready to scan</div>
+                    </div>
+                `;
+                return;
+            }
+          
+            list.innerHTML = scanHistory.map(scan => `
+                <div class="scan-item ${scan.status}">
+                    <div class="scan-icon ${scan.status}">
+                        ${scan.status === 'success' ? '✓' :
+                          scan.status === 'error' ? '✗' :
+                          scan.status === 'redeemed' ? '🎁' : '⏳'}
+                    </div>
+                    <div class="scan-info">
+                        <div class="scan-barcode">${scan.barcode}</div>
+                        <div class="scan-meta">
+                            <span>${scan.timestamp}</span>
+                            <span>•</span>
+                            <span>${scan.source === 'camera' ? '📷' : scan.source === 'test' ? '🧪' : '⌨️'}</span>
+                            <span>•</span>
+                            <span>${scan.eventType === '1' ? '🏭 Factory' : '🍽️ Dinner'}</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center;">
+                        <span class="scan-status ${scan.status}">
+                            ${scan.status}
+                        </span>
+                        ${scan.status === 'error' ?
+                            `<button class="retry-btn" onclick="retryScan('${scan.barcode}')">Retry</button>` : ''}
+                    </div>
+                </div>
+            `).join('');
+          
+            list.scrollTop = 0;
+        }
+        function retryScan(barcode) {
+            processBarcode(barcode, 'manual');
+        }
+        function clearScans() {
+            if (scanHistory.length === 0) return;
+            if (confirm('Clear all history?')) {
+                scanHistory = [];
+                stats = { total: 0, success: 0, failed: 0 };
+                updateStats();
+                renderScans();
+            }
+        }
+        function updateStats() {
+            document.getElementById('statTotal').textContent = stats.total;
+            document.getElementById('statSuccess').textContent = stats.success;
+            document.getElementById('statFailed').textContent = stats.failed;
+        }
+        // Close modals on backdrop click
+        document.getElementById('resultModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+       
+        document.getElementById('settingsModal').addEventListener('click', function(e) {
+            if (e.target === this) closeSettings();
+        });
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && isScanning) {
+                // pause logic if desired
+            }
+        });
+        // Prevent pull-to-refresh on mobile
+        let touchStartY = 0;
+        document.addEventListener('touchstart', e => {
+            touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+        document.addEventListener('touchmove', e => {
+            const touchY = e.touches[0].clientY;
+            const scrollTop = document.querySelector('.content').scrollTop;
+          
+            if (scrollTop <= 0 && touchY > touchStartY) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    </script>
+</body>
+</html>

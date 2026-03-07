@@ -3,9 +3,10 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
-<title>Factory Scanner</title>
+<title>Factory Scanner V3</title>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 
@@ -148,11 +149,16 @@ body.evening::before{
   background:var(--s1);border:1px solid var(--muted2);margin-bottom:12px;
 }
 .cam-view{
-  width:100%;aspect-ratio:4/3;position:relative;
+  width:100%;aspect-ratio:16/9;position:relative;
   background:#020205;overflow:hidden;
   display:flex;align-items:center;justify-content:center;
 }
-#vid{width:100%;height:100%;object-fit:cover;display:none;}
+#vid{
+  width:100%;height:100%;
+  object-fit:contain;  /* contain = no crop, no zoom */
+  display:none;
+  background:#000;
+}
 
 /* idle */
 .cam-idle{display:flex;flex-direction:column;align-items:center;gap:16px;animation:revealUp .5s ease both;}
@@ -490,6 +496,7 @@ body:not(.evening) .btn-yes{color:#2A1400;}
   <div class="cam-block reveal d2">
     <div class="cam-view" id="camView">
       <video id="vid" playsinline autoplay muted></video>
+      <canvas id="scanCanvas" style="display:none;position:absolute;inset:0;"></canvas>
       <div class="cam-idle" id="camIdle">
         <div class="cam-idle-ring">
           <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
@@ -683,11 +690,41 @@ updateStats();
 renderHistory();
 
 // ── Camera ──
+// ── Camera + ZXing barcode scanner ──
+let codeReader = null;
+let lastScannedCode = '';
+let lastScannedTime = 0;
+const DEBOUNCE_MS = 3000; // don't fire same barcode twice within 3s
+
 async function camStart() {
   try {
-    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-    G('vid').srcObject = stream;
-    G('vid').style.display = 'block';
+    // Init ZXing reader
+    codeReader = new ZXing.BrowserMultiFormatReader();
+
+    // Request high-res rear camera — zoom out as much as possible
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: 'environment' },
+        width:  { ideal: 1920, min: 640 },
+        height: { ideal: 1080, min: 480 },
+        zoom: 1  // request minimum zoom where supported
+      },
+      audio: false
+    });
+
+    const vid = G('vid');
+    vid.srcObject = stream;
+    vid.style.display = 'block';
+
+    // Try to minimize zoom via advanced constraints if supported
+    const track = stream.getVideoTracks()[0];
+    if (track && track.getCapabilities) {
+      const caps = track.getCapabilities();
+      if (caps.zoom) {
+        await track.applyConstraints({ advanced: [{ zoom: caps.zoom.min }] });
+      }
+    }
+
     G('camIdle').style.display = 'none';
     G('camView').classList.add('active');
     G('scanOverlay').classList.add('on');
@@ -697,14 +734,72 @@ async function camStart() {
     G('stopBtn').style.display = '';
     G('warnBanner').classList.remove('on');
     S.camOn = true;
+
+    // Start continuous barcode decode
+    vid.addEventListener('loadedmetadata', () => {
+      decodeContinuous();
+    }, { once: true });
+
   } catch(e) {
+    console.error(e);
     G('warnBanner').classList.add('on');
     toast('Camera access denied', 'err');
   }
 }
 
+function decodeContinuous() {
+  const vid    = G('vid');
+  const canvas = G('scanCanvas');
+  const ctx    = canvas.getContext('2d');
+
+  function tick() {
+    if (!S.camOn || vid.readyState < 2) { requestAnimationFrame(tick); return; }
+
+    canvas.width  = vid.videoWidth;
+    canvas.height = vid.videoHeight;
+    ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
+
+    try {
+      const imgData  = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const luminance = new ZXing.RGBLuminanceSource(imgData.data, canvas.width, canvas.height);
+      const bmp      = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(luminance));
+      const hints    = new Map();
+      hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+
+      const reader   = new ZXing.MultiFormatReader();
+      reader.setHints(hints);
+      const result   = reader.decode(bmp);
+
+      if (result) {
+        const code = result.getText();
+        const now  = Date.now();
+        // Debounce — skip if same code scanned within 3s
+        if (code !== lastScannedCode || now - lastScannedTime > DEBOUNCE_MS) {
+          lastScannedCode = code;
+          lastScannedTime = now;
+          // Visual feedback
+          const beam = G('scanBeam');
+          beam.style.background = 'linear-gradient(90deg,transparent,#fff,transparent)';
+          setTimeout(() => {
+            beam.style.background = '';
+          }, 300);
+          handleScan(code);
+        }
+      }
+    } catch(e) {
+      // No barcode found in this frame — normal, keep looping
+    }
+
+    if (S.camOn) requestAnimationFrame(tick);
+  }
+
+  requestAnimationFrame(tick);
+}
+
 function camStop() {
+  S.camOn = false;
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  if (codeReader) { codeReader = null; }
   G('vid').style.display = 'none';
   G('camIdle').style.display = 'flex';
   G('camView').classList.remove('active');
@@ -713,7 +808,6 @@ function camStop() {
   G('camTip').classList.remove('on');
   G('startBtn').style.display = '';
   G('stopBtn').style.display = 'none';
-  S.camOn = false;
 }
 
 G('startBtn').addEventListener('click', camStart);

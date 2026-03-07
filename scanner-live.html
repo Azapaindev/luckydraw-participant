@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<title>Factory Scanner V3</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+
+/* ══ MORNING THEME (Factory — default) ══ */
+:root{
+  --bg:#FFF8EC;
+  --s1:#FFF2D8;
+  --s2:#FFECC0;
+  --accent:#F59500;
+  --accent-glow:rgba(245,149,0,.35);
+  --accent-soft:rgba(245,149,0,.12);
+  --accent-border:rgba(245,149,0,.25);
+  --accent-05:rgba(245,149,0,.05);
+  --accent-08:rgba(245,149,0,.08);
+  --accent-10:rgba(245,149,0,.1);
+  --accent-15:rgba(245,149,0,.15);
+  --accent-16:rgba(245,149,0,.16);
+  --accent-20:rgba(245,149,0,.2);
+  --accent-30:rgba(245,149,0,.3);
+  --accent-40:rgba(245,149,0,.4);
+  --accent-45:rgba(245,149,0,.45);
+  --accent-50:rgba(245,149,0,.5);
+  --accent-07:rgba(245,149,0,.07);
+  --red:#FF3B57;
+  --orange:#FF8C00;
+  --blue:#0099E6;
+  --txt:#1A120A;
+  --muted:#A08060;
+  --muted2:#E8D8B8;
+  --beam-shadow:rgba(245,149,0,.6);
+  --r:16px;
+  --d:'Unbounded',sans-serif;
+  --b:'DM Sans',sans-serif;
+  --m:'JetBrains Mono',monospace;
+}
+
+/* ══ EVENING THEME (Dinner) ══ */
+body.evening{
+  --bg:#08050F;
+  --s1:#110D1C;
+  --s2:#1A1428;
+  --accent:#C9A84C;
+  --accent-glow:rgba(201,168,76,.35);
+  --accent-soft:rgba(201,168,76,.12);
+  --accent-border:rgba(201,168,76,.25);
+  --accent-05:rgba(201,168,76,.05);
+  --accent-08:rgba(201,168,76,.08);
+  --accent-10:rgba(201,168,76,.1);
+  --accent-15:rgba(201,168,76,.15);
+  --accent-16:rgba(201,168,76,.16);
+  --accent-20:rgba(201,168,76,.2);
+  --accent-30:rgba(201,168,76,.3);
+  --accent-40:rgba(201,168,76,.4);
+  --accent-45:rgba(201,168,76,.45);
+  --accent-50:rgba(201,168,76,.5);
+  --accent-07:rgba(201,168,76,.07);
+  --red:#FF3B57;
+  --orange:#FF8C00;
+  --blue:#8B6FFF;
+  --txt:#F0EAF8;
+  --muted:#6A5A80;
+  --muted2:#2A2040;
+  --beam-shadow:rgba(201,168,76,.6);
+}
+
+html{height:100%;-webkit-font-smoothing:antialiased;}
+body{
+  background:var(--bg);color:var(--txt);font-family:var(--b);
+  min-height:100%;overflow-x:hidden;
+  transition:background .7s ease, color .5s ease;
+}
+
+/* morning sky background */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 100% 50% at 50% 0%, rgba(255,180,60,.18) 0%, transparent 60%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  transition:opacity .7s ease;
+}
+/* evening star background */
+body.evening::before{
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(120,80,200,.12) 0%, transparent 60%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+}
+
+.shell{max-width:440px;margin:0 auto;padding:0 16px 120px;position:relative;z-index:1;}
+
+/* ══ Sky transition overlay ══ */
+.sky-overlay{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  opacity:1;transition:opacity .8s ease;
+}
+/* Morning sun rays */
+.sky-overlay.morning{
+  background:
+    radial-gradient(ellipse 60% 40% at 50% -5%, rgba(255,200,80,.22) 0%, transparent 65%),
+    radial-gradient(ellipse 30% 20% at 50% 0%, rgba(255,220,100,.15) 0%, transparent 50%);
+}
+/* Evening stars + moon glow */
+.sky-overlay.evening{
+  background:
+    radial-gradient(ellipse 50% 35% at 75% 5%, rgba(180,140,255,.1) 0%, transparent 60%),
+    radial-gradient(ellipse 20% 15% at 80% 3%, rgba(220,200,255,.12) 0%, transparent 40%);
+}
+.reveal{opacity:0;transform:translateY(22px);animation:revealUp .6s ease forwards;}
+@keyframes revealUp{to{opacity:1;transform:none;}}
+.d1{animation-delay:.05s;}.d2{animation-delay:.12s;}.d3{animation-delay:.19s;}
+.d4{animation-delay:.26s;}.d5{animation-delay:.33s;}.d6{animation-delay:.40s;}
+.d7{animation-delay:.47s;}
+
+/* ══ Theme transition on all key elements ══ */
+.cam-block,.manual,.stat,.history,.seg,.sheet,.warn,
+.inp,.btn-prime,.btn-ghost,.ico-btn,.go-btn,.hdr-dot{
+  transition:background .6s ease, border-color .6s ease, box-shadow .6s ease, color .4s ease;
+}
+
+/* ══ Header ══ */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:20px 0 18px;}
+.hdr-brand{display:flex;align-items:center;gap:10px;}
+.hdr-dot{
+  width:36px;height:36px;border-radius:10px;background:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  font-size:17px;flex-shrink:0;box-shadow:0 0 24px var(--accent-glow);
+}.hdr-name{font-family:var(--d);font-size:15px;letter-spacing:-.3px;line-height:1;font-weight:700;}
+.hdr-sub{font-family:var(--m);font-size:9px;color:var(--muted);letter-spacing:2px;margin-top:2px;}
+.hdr-actions{display:flex;gap:8px;}
+.ico-btn{
+  width:36px;height:36px;border-radius:10px;
+  background:var(--s1);border:1px solid var(--muted2);
+  color:var(--muted);font-size:15px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;flex-shrink:0;
+}
+.ico-btn:hover{border-color:var(--accent);color:var(--accent);box-shadow:0 0 12px var(--accent-20);}
+
+/* ══ Camera block ══ */
+.cam-block{
+  border-radius:20px;overflow:hidden;position:relative;
+  background:var(--s1);border:1px solid var(--muted2);margin-bottom:12px;
+}
+.cam-view{
+  width:100%;aspect-ratio:4/3;position:relative;
+  background:#020205;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+}
+/* html5-qrcode injects its own div/video — override to fill container */
+#reader{
+  position:absolute;inset:0;width:100%!important;height:100%!important;
+  border:none!important;
+}
+#reader video{
+  width:100%!important;height:100%!important;
+  object-fit:cover!important;
+  display:block;
+}
+/* Hide html5-qrcode's own UI elements — we use our own overlay */
+#reader img, #reader canvas{ display:none!important; }
+#reader__scan_region{ width:100%!important;height:100%!important; }
+#reader__dashboard{ display:none!important; }
+
+/* idle */
+.cam-idle{display:flex;flex-direction:column;align-items:center;gap:16px;animation:revealUp .5s ease both;}
+.cam-idle-ring{
+  width:80px;height:80px;border-radius:50%;
+  border:1px solid var(--muted2);
+  display:flex;align-items:center;justify-content:center;position:relative;
+}
+.cam-idle-ring::before{
+  content:'';position:absolute;inset:-8px;border-radius:50%;
+  border:1px dashed var(--muted2);animation:spinRing 8s linear infinite;
+}
+@keyframes spinRing{to{transform:rotate(360deg);}}
+.cam-idle-ring svg{width:30px;height:30px;fill:none;stroke:var(--muted);stroke-width:1.5;}
+.cam-idle-label{text-align:center;}
+.cam-idle-label p{font-family:var(--d);font-size:16px;letter-spacing:-.5px;font-weight:700;color:var(--txt);}
+.cam-idle-label span{font-family:var(--m);font-size:10px;color:var(--muted);letter-spacing:2px;}
+
+/* scan overlay */
+.scan-overlay{position:absolute;inset:0;pointer-events:none;display:none;}
+.scan-overlay.on{display:block;}
+.scan-overlay::before,.scan-overlay::after{content:'';position:absolute;width:28%;height:28%;border-color:var(--accent);border-style:solid;}
+.scan-overlay::before{top:12%;left:12%;border-width:2px 0 0 2px;border-radius:6px 0 0 0;}
+.scan-overlay::after{bottom:12%;right:12%;border-width:0 2px 2px 0;border-radius:0 0 6px 0;}
+.br-tr,.br-bl{position:absolute;width:28%;height:28%;border-color:var(--accent);border-style:solid;pointer-events:none;}
+.br-tr{top:12%;right:12%;border-width:2px 2px 0 0;border-radius:0 6px 0 0;}
+.br-bl{bottom:12%;left:12%;border-width:0 0 2px 2px;border-radius:0 0 0 6px;}
+
+.scan-beam{
+  position:absolute;left:12%;right:12%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent);
+  box-shadow:0 0 12px 2px var(--accent-50),0 0 40px var(--accent-20);
+  top:12%;display:none;
+  animation:beamMove 2.2s cubic-bezier(.4,0,.2,1) infinite;
+}
+.scan-beam.on{display:block;}
+@keyframes beamMove{0%{top:12%;}80%{top:76%;}100%{top:12%;}}
+
+.cam-view::after{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 80% at 50% 50%,transparent 50%,rgba(2,2,5,.6) 100%);
+  pointer-events:none;display:none;
+}
+.cam-view.active::after{display:block;}
+.cam-tip{
+  padding:10px 16px;font-family:var(--m);font-size:10px;
+  color:var(--muted);text-align:center;letter-spacing:1px;
+  border-top:1px solid var(--muted2);display:none;text-transform:uppercase;
+}
+.cam-tip.on{display:block;}
+
+/* flash */
+.flash{position:absolute;inset:0;background:var(--accent-15);opacity:0;pointer-events:none;}
+.flash.go{animation:flashGo .5s ease forwards;}
+.flash-red{background:rgba(255,45,85,.15);}
+@keyframes flashGo{0%{opacity:1;}100%{opacity:0;}}
+
+.cam-ctrls{display:flex;gap:10px;padding:12px;}
+
+/* ══ Buttons ══ */
+.btn{
+  flex:1;border:none;border-radius:12px;padding:13px 20px;
+  font-family:var(--b);font-size:14px;font-weight:700;
+  cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-prime{
+  background:var(--accent);color:#fff;
+  box-shadow:0 4px 24px var(--accent-30),0 1px 0 rgba(255,255,255,.15) inset;
+}
+body:not(.evening) .btn-prime{color:#2A1400;}
+.btn-prime:hover{box-shadow:0 6px 36px var(--accent-50);transform:translateY(-1px);}
+.btn-prime:active{transform:none;box-shadow:none;}
+.btn-ghost{background:var(--s2);border:1px solid var(--muted2);color:var(--muted);}
+.btn-ghost:hover{border-color:var(--red);color:var(--red);}
+.btn:disabled{opacity:.35;cursor:not-allowed;pointer-events:none;}
+
+/* ══ Event toggle ══ */
+.seg-wrap{margin-bottom:12px;}
+.seg{
+  display:grid;grid-template-columns:1fr 1fr;
+  background:var(--s1);border:1px solid var(--muted2);
+  border-radius:14px;padding:4px;gap:4px;
+}
+.seg-btn{
+  border-radius:10px;padding:12px 10px;cursor:pointer;
+  transition:all .22s;text-align:center;border:none;background:transparent;color:var(--muted);
+}
+.seg-icon{font-size:20px;display:block;margin-bottom:5px;}
+.seg-name{font-family:var(--b);font-size:13px;font-weight:700;display:block;color:inherit;}
+.seg-desc{font-family:var(--m);font-size:9px;letter-spacing:.5px;display:block;margin-top:2px;color:var(--muted);opacity:.7;}
+.seg-btn.on{background:var(--s2);border:1px solid var(--accent-20);color:var(--accent);box-shadow:0 0 16px var(--accent-08);}
+.seg-btn.on .seg-name{color:var(--accent);}
+
+/* ══ Manual entry ══ */
+.manual{background:var(--s1);border:1px solid var(--muted2);border-radius:var(--r);padding:14px;margin-bottom:12px;}
+.manual-label{font-family:var(--m);font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:10px;}
+.manual-row{display:flex;gap:8px;}
+.inp{
+  flex:1;background:var(--s2);border:1px solid var(--muted2);
+  border-radius:10px;padding:12px 14px;
+  font-family:var(--m);font-size:13px;color:var(--txt);
+  outline:none;transition:all .2s;
+}
+.inp::placeholder{color:var(--muted);}
+.inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-08);}
+.go-btn{
+  background:var(--accent);color:#fff;border:none;
+  border-radius:10px;padding:0 18px;cursor:pointer;
+  font-family:var(--b);font-size:14px;font-weight:700;
+  transition:all .2s;white-space:nowrap;
+  box-shadow:0 4px 20px var(--accent-border);
+}
+body:not(.evening) .go-btn{color:#2A1400;}
+.go-btn:hover{box-shadow:0 4px 28px var(--accent-45);transform:translateY(-1px);}
+
+/* ══ Stats ══ */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
+.stat{background:var(--s1);border:1px solid var(--muted2);border-radius:var(--r);padding:16px 10px;text-align:center;transition:transform .15s;}
+.stat:hover{transform:translateY(-2px);}
+.stat-n{font-family:var(--d);font-size:28px;line-height:1;display:block;margin-bottom:4px;font-weight:900;}
+.stat-n.t{color:var(--txt);}
+.stat-n.v{color:var(--accent);text-shadow:0 0 20px var(--accent-40);}
+.stat-n.i{color:var(--red);text-shadow:0 0 20px rgba(255,45,85,.4);}
+.stat-lbl{font-family:var(--m);font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);}
+@keyframes statPop{0%{transform:scale(1);}50%{transform:scale(1.12);}100%{transform:scale(1);}}
+.pop{animation:statPop .3s ease;}
+
+/* ══ Scan history ══ */
+.history{background:var(--s1);border:1px solid var(--muted2);border-radius:var(--r);overflow:hidden;}
+.hist-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--muted2);}
+.hist-title{font-family:var(--b);font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.hist-title-dot{
+  width:7px;height:7px;border-radius:50%;background:var(--accent);
+  box-shadow:0 0 8px var(--accent);animation:blink 2s ease-in-out infinite;
+}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+.clr-btn{
+  font-family:var(--m);font-size:10px;color:var(--red);
+  background:rgba(255,45,85,.08);border:1px solid rgba(255,45,85,.2);
+  border-radius:8px;padding:5px 10px;cursor:pointer;transition:all .2s;letter-spacing:.5px;
+}
+.clr-btn:hover{background:rgba(255,45,85,.18);}
+.xls-btn{
+  font-family:var(--m);font-size:10px;color:var(--accent);
+  background:var(--accent-08);border:1px solid var(--accent-20);
+  border-radius:8px;padding:5px 10px;cursor:pointer;
+  transition:all .2s;letter-spacing:.5px;
+}
+.xls-btn:hover{background:var(--accent-16);box-shadow:0 0 12px var(--accent-15);}
+.xls-btn:disabled{opacity:.35;cursor:not-allowed;}
+.hist-empty{padding:48px 20px;text-align:center;}
+.hist-empty-ico{
+  width:56px;height:56px;border-radius:50%;
+  background:var(--s2);border:1px solid var(--muted2);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 14px;font-size:22px;opacity:.5;
+}
+.hist-empty p{font-family:var(--m);font-size:11px;color:var(--muted);letter-spacing:1px;}
+.hist-list{max-height:300px;overflow-y:auto;}
+.hist-list::-webkit-scrollbar{width:3px;}
+.hist-list::-webkit-scrollbar-track{background:transparent;}
+.hist-list::-webkit-scrollbar-thumb{background:var(--muted2);border-radius:3px;}
+.hist-item{
+  display:flex;align-items:center;gap:12px;
+  padding:13px 16px;border-bottom:1px solid rgba(255,255,255,.03);
+  animation:itemIn .25s ease both;
+}
+@keyframes itemIn{from{opacity:0;transform:translateX(-12px);}to{opacity:1;transform:none;}}
+.hist-item:last-child{border-bottom:none;}
+.hist-status{width:32px;height:32px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.hist-status.v{background:var(--accent-10);box-shadow:0 0 10px var(--accent-10);}
+.hist-status.i{background:rgba(255,45,85,.1);}
+.hist-info{flex:1;min-width:0;}
+.hist-code{font-family:var(--m);font-size:12px;font-weight:600;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hist-meta{font-family:var(--m);font-size:10px;color:var(--muted);margin-top:3px;}
+.hist-badge{font-family:var(--m);font-size:9px;font-weight:600;padding:4px 9px;border-radius:6px;flex-shrink:0;letter-spacing:.5px;text-transform:uppercase;}
+.hist-badge.v{background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent-15);}
+.hist-badge.i{background:rgba(255,45,85,.1);color:var(--red);border:1px solid rgba(255,45,85,.15);}
+
+/* ══ MODALS ══ */
+.overlay{
+  position:fixed;inset:0;z-index:100;
+  background:rgba(0,0,0,.85);backdrop-filter:blur(12px);
+  display:flex;align-items:flex-end;justify-content:center;
+  padding:16px;opacity:0;pointer-events:none;transition:opacity .3s;
+}
+.overlay.on{opacity:1;pointer-events:all;}
+.sheet{
+  background:var(--s1);border:1px solid var(--muted2);
+  border-radius:24px;width:100%;max-width:440px;
+  transform:translateY(60px) scale(.98);
+  transition:transform .35s cubic-bezier(.34,1.3,.64,1);overflow:hidden;
+}
+.overlay.on .sheet{transform:none;}
+
+/* Result modal */
+.res-top{padding:32px 24px 24px;text-align:center;position:relative;border-bottom:1px solid var(--muted2);overflow:hidden;}
+.res-top::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,var(--accent-07) 0%,transparent 70%);}
+.res-top.fail::before{background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(255,45,85,.07) 0%,transparent 70%);}
+.res-glyph{font-family:var(--d);font-size:44px;line-height:1;display:block;margin-bottom:10px;position:relative;font-weight:900;letter-spacing:-1px;}
+.res-glyph.ok{color:var(--accent);text-shadow:0 0 40px var(--accent-50);}
+.res-glyph.no{color:var(--red);text-shadow:0 0 40px rgba(255,45,85,.5);}
+.res-label{font-family:var(--d);font-size:20px;letter-spacing:-.5px;position:relative;font-weight:700;}
+.res-label.ok{color:var(--accent);}
+.res-label.no{color:var(--red);}
+.res-sub{font-family:var(--m);font-size:10px;color:var(--muted);margin-top:6px;letter-spacing:1.5px;position:relative;text-transform:uppercase;}
+.res-body{padding:20px 24px;}
+.res-rows{display:grid;gap:8px;margin-bottom:20px;}
+.res-row{display:flex;justify-content:space-between;align-items:center;background:var(--s2);border-radius:10px;padding:11px 14px;}
+.res-key{font-family:var(--m);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.res-val{font-family:var(--m);font-size:13px;font-weight:600;}
+.res-acts{display:flex;gap:10px;}
+.btn-no{
+  flex:1;padding:14px;border-radius:12px;
+  background:var(--s2);border:1px solid var(--muted2);color:var(--muted);
+  font-family:var(--b);font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;
+}
+.btn-no:hover{border-color:var(--muted);color:var(--txt);}
+.btn-yes{
+  flex:2;padding:14px;border-radius:12px;background:var(--accent);color:#fff;
+  font-family:var(--b);font-size:14px;font-weight:800;border:none;cursor:pointer;
+  transition:all .2s;box-shadow:0 4px 24px var(--accent-30);
+}
+body:not(.evening) .btn-yes{color:#2A1400;}
+.btn-yes:hover{box-shadow:0 6px 36px var(--accent-50);transform:translateY(-1px);}
+
+.res-top.noreward::before{background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(255,140,0,.07) 0%,transparent 70%);}
+.res-glyph.nr{color:var(--orange);text-shadow:0 0 40px rgba(255,140,0,.5);}
+.res-label.nr{color:var(--orange);}
+.flash-orange{background:rgba(255,140,0,.15);}
+.hist-badge.nr{background:rgba(255,140,0,.1);color:var(--orange);border:1px solid rgba(255,140,0,.2);}
+.hist-status.nr{background:rgba(255,140,0,.1);}
+
+/* reward card in gift modal */
+.gift-top{
+  padding:32px 24px 24px;text-align:center;border-bottom:1px solid var(--muted2);
+  background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(0,200,255,.06) 0%,transparent 70%);
+}
+.gift-glyph{font-size:56px;display:block;margin-bottom:12px;}
+.gift-title{font-family:var(--d);font-size:20px;letter-spacing:-.5px;font-weight:700;color:var(--blue);text-shadow:0 0 30px rgba(0,200,255,.4);}
+.gift-sub{font-family:var(--m);font-size:10px;color:var(--muted);margin-top:6px;letter-spacing:1.5px;}
+.gift-body{padding:20px 24px;}
+.gift-card{border:1px solid rgba(0,200,255,.2);border-radius:14px;background:rgba(0,200,255,.05);padding:20px;text-align:center;margin-bottom:20px;}
+.gift-card-name{font-family:var(--d);font-size:16px;font-weight:700;color:var(--blue);}
+.gift-card-desc{font-family:var(--m);font-size:10px;color:var(--muted);margin-top:6px;letter-spacing:1px;}
+.btn-gift{
+  width:100%;padding:15px;border-radius:12px;
+  background:linear-gradient(135deg,var(--blue),#0090FF);
+  color:#fff;border:none;font-family:var(--b);font-size:15px;font-weight:800;
+  cursor:pointer;transition:all .2s;box-shadow:0 4px 24px rgba(0,200,255,.3);
+}
+.btn-gift:hover{box-shadow:0 6px 36px rgba(0,200,255,.5);transform:translateY(-1px);}
+
+/* Settings */
+.set-hdr{display:flex;align-items:center;justify-content:space-between;padding:20px 20px 16px;border-bottom:1px solid var(--muted2);}
+.set-hdr h2{font-family:var(--d);font-size:17px;letter-spacing:-.3px;font-weight:700;}
+.set-body{padding:20px;}
+.fld-lbl{font-family:var(--m);font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:8px;display:block;}
+.fld-hint{font-family:var(--m);font-size:10px;color:var(--muted);margin-top:7px;line-height:1.6;}
+
+/* ══ Backup link button ══ */
+.backup-link-btn{
+  display:flex;align-items:center;gap:10px;width:100%;
+  padding:14px 16px;border-radius:12px;
+  background:rgba(0,153,230,.08);
+  border:1px solid rgba(0,153,230,.25);
+  color:var(--blue);text-decoration:none;
+  font-family:var(--b);font-size:13px;font-weight:700;
+  cursor:pointer;transition:all .2s;
+  box-shadow:0 2px 12px rgba(0,153,230,.1);
+}
+.backup-link-btn:hover{
+  background:rgba(0,153,230,.15);
+  box-shadow:0 4px 20px rgba(0,153,230,.25);
+  transform:translateY(-1px);
+}
+.backup-link-icon{font-size:18px;flex-shrink:0;}
+.backup-link-text{display:flex;flex-direction:column;gap:2px;text-align:left;}
+.backup-link-title{font-family:var(--b);font-size:13px;font-weight:700;color:var(--blue);}
+.backup-link-desc{font-family:var(--m);font-size:9px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;}
+
+/* ══ Copyright footer ══ */
+.copyright-footer{
+  text-align:center;padding:20px 0 8px;
+  border-top:1px solid var(--muted2);
+  margin-top:20px;
+}
+.copyright-footer span{
+  font-family:var(--m);font-size:10px;
+  color:var(--muted);letter-spacing:1.2px;
+  text-transform:uppercase;line-height:1.8;
+  display:block;
+}
+.copyright-footer .copy-brand{
+  color:var(--accent);font-weight:600;
+  font-size:11px;letter-spacing:1.5px;
+}
+
+/* ══ Toast ══ */
+.toast{
+  position:fixed;bottom:28px;left:50%;
+  transform:translateX(-50%) translateY(60px);
+  z-index:200;background:var(--s2);border:1px solid var(--muted2);
+  border-radius:12px;padding:11px 18px;
+  font-family:var(--m);font-size:12px;
+  display:flex;align-items:center;gap:9px;
+  box-shadow:0 12px 40px rgba(0,0,0,.6);
+  transition:transform .4s cubic-bezier(.34,1.56,.64,1),opacity .4s;
+  opacity:0;white-space:nowrap;letter-spacing:.3px;
+}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+.toast.ok{border-color:var(--accent-border);}
+.toast.err{border-color:rgba(255,45,85,.25);}
+.td{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.toast.ok .td{background:var(--accent);box-shadow:0 0 8px var(--accent);}
+.toast.err .td{background:var(--red);box-shadow:0 0 8px var(--red);}
+
+/* ══ Warn banner ══ */
+.warn{
+  background:rgba(255,45,85,.07);border:1px solid rgba(255,45,85,.2);
+  border-radius:var(--r);padding:12px 14px;margin-bottom:12px;
+  display:none;gap:10px;
+}
+.warn.on{display:flex;}
+.warn-ico{font-size:15px;flex-shrink:0;margin-top:1px;}
+.warn-txt{font-family:var(--m);font-size:11px;color:rgba(255,100,120,1);line-height:1.6;}
+.warn-a{
+  display:inline-block;margin-top:7px;
+  background:rgba(255,45,85,.15);border:1px solid rgba(255,45,85,.25);
+  color:var(--red);border-radius:6px;padding:5px 10px;
+  font-size:10px;font-family:var(--m);cursor:pointer;transition:all .2s;letter-spacing:.5px;
+}
+.warn-a:hover{background:rgba(255,45,85,.25);}
+
+/* loading spinner on scan */
+.spinner{
+  display:inline-block;width:14px;height:14px;border-radius:50%;
+  border:2px solid rgba(5,5,10,.3);border-top-color:#05050A;
+  animation:spin .7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+<div class="sky-overlay morning" id="skyOverlay"></div>
+<div class="shell">
+
+  <!-- HEADER -->
+  <div class="hdr reveal d1">
+    <div class="hdr-brand">
+      <div class="hdr-dot" id="hdrDot">🌅</div>
+      <div>
+        <div class="hdr-name">FACTORY SCANNER</div>
+        <div class="hdr-sub" id="hdrSub">PARTICIPANT VALIDATION · MORNING</div>
+      </div>
+    </div>
+    <div class="hdr-actions">
+      <button class="ico-btn" id="settingsBtn" title="Settings">⚙️</button>
+    </div>
+  </div>
+
+  <!-- WARN -->
+  <div class="warn" id="warnBanner">
+    <span class="warn-ico">⚠️</span>
+    <div class="warn-txt">
+      Camera access required to scan barcodes.
+      <br><span class="warn-a" id="retryBtn">Allow Camera Access</span>
+    </div>
+  </div>
+
+  <!-- CAMERA -->
+  <div class="cam-block reveal d2">
+    <div class="cam-view" id="camView">
+      <div id="reader"></div>
+      <div class="cam-idle" id="camIdle">
+        <div class="cam-idle-ring">
+          <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </div>
+        <div class="cam-idle-label">
+          <p>TAP TO START</p>
+          <span>BARCODE SCANNER</span>
+        </div>
+      </div>
+      <div class="scan-overlay" id="scanOverlay">
+        <div class="br-tr"></div>
+        <div class="br-bl"></div>
+      </div>
+      <div class="scan-beam" id="scanBeam"></div>
+      <div class="flash" id="flash"></div>
+    </div>
+    <div class="cam-tip" id="camTip">ALIGN BARCODE WITHIN FRAME</div>
+    <div class="cam-ctrls">
+      <button class="btn btn-prime" id="startBtn">▶ Start Camera</button>
+      <button class="btn btn-ghost" id="stopBtn" style="display:none">⏹ Stop</button>
+    </div>
+  </div>
+
+  <!-- EVENT TYPE -->
+  <div class="seg-wrap reveal d3">
+    <div class="seg">
+      <button class="seg-btn on" data-ev="factory">
+        <span class="seg-icon">🏭</span>
+        <span class="seg-name">Factory Visit</span>
+        <span class="seg-desc">MORNING TOUR</span>
+      </button>
+      <button class="seg-btn" data-ev="dinner">
+        <span class="seg-icon">🍽️</span>
+        <span class="seg-name">Dinner</span>
+        <span class="seg-desc">EVENING EVENT</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- MANUAL ENTRY -->
+  <div class="manual reveal d4">
+    <div class="manual-label">Manual Entry</div>
+    <div class="manual-row">
+      <input class="inp" id="manInp" placeholder="Enter barcode code…" type="text"/>
+      <button class="go-btn" id="goBtn">Go →</button>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats reveal d5">
+    <div class="stat">
+      <span class="stat-n t" id="sTotal">0</span>
+      <span class="stat-lbl">Total</span>
+    </div>
+    <div class="stat">
+      <span class="stat-n v" id="sValid">0</span>
+      <span class="stat-lbl">Rewards</span>
+    </div>
+    <div class="stat">
+      <span class="stat-n i" id="sInvalid">0</span>
+      <span class="stat-lbl">Invalid</span>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="history reveal d6">
+    <div class="hist-hdr">
+      <div class="hist-title">
+        <span class="hist-title-dot"></span>
+        Recent Scans
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button class="xls-btn" id="xlsBtn">⬇ Excel</button>
+        <button class="clr-btn" id="clrBtn">Clear All</button>
+      </div>
+    </div>
+    <div id="histBody">
+      <div class="hist-empty">
+        <div class="hist-empty-ico">📷</div>
+        <p>READY TO SCAN</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- COPYRIGHT FOOTER -->
+  <div class="copyright-footer reveal d7">
+    <span class="copy-brand">© ICT · OML 2026</span>
+    <span>All Rights Reserved</span>
+  </div>
+
+</div><!-- /shell -->
+
+<!-- RESULT MODAL -->
+<div class="overlay" id="resOverlay">
+  <div class="sheet">
+    <div class="res-top" id="resTop">
+      <span class="res-glyph ok" id="resGlyph">VALID</span>
+      <div class="res-label ok" id="resLabel">Barcode Accepted</div>
+      <div class="res-sub" id="resSub">ELIGIBLE FOR REWARD</div>
+    </div>
+    <div class="res-body">
+      <div class="res-rows">
+        <div class="res-row"><span class="res-key">Barcode</span><span class="res-val" id="rBC">—</span></div>
+        <div class="res-row"><span class="res-key">Event</span><span class="res-val" id="rEV">—</span></div>
+        <div class="res-row"><span class="res-key">Eligible</span><span class="res-val" id="rEL">—</span></div>
+        <div class="res-row" id="rMsgRow"><span class="res-key">Message</span><span class="res-val" id="rMSG" style="font-size:11px;text-align:right;max-width:60%;">—</span></div>
+      </div>
+      <div class="res-acts" id="resActs"></div>
+    </div>
+  </div>
+</div>
+
+<!-- GIFT MODAL -->
+<div class="overlay" id="giftOverlay">
+  <div class="sheet">
+    <div class="gift-top">
+      <span class="gift-glyph">🎁</span>
+      <div class="gift-title">YOU GOT A REWARD!</div>
+      <div class="gift-sub">COLLECT AT REDEMPTION COUNTER</div>
+    </div>
+    <div class="gift-body">
+      <div class="gift-card">
+        <div class="gift-card-name" id="giftItemName">Premium Gift Box</div>
+        <div class="gift-card-desc" id="giftItemDesc">SHOW THIS SCREEN AT THE COUNTER</div>
+        <div style="margin-top:12px;display:flex;align-items:center;justify-content:center;gap:8px;">
+          <span style="font-family:var(--m);font-size:10px;color:var(--muted);">QTY</span>
+          <span style="font-family:var(--d);font-size:22px;font-weight:900;color:var(--blue);" id="giftQty">1</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn-no" id="giftCancel">Cancel</button>
+        <button class="btn-gift" id="giftConfirm">✓ Confirm Redemption</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="overlay" id="setOverlay">
+  <div class="sheet">
+    <div class="set-hdr">
+      <h2>SETTINGS</h2>
+      <button class="ico-btn" id="setClose">✕</button>
+    </div>
+    <div class="set-body">
+
+      <!-- ══ BACKUP FORM LINK ══ -->
+      <label class="fld-lbl">⚠️ Backup — Manual Registration</label>
+      <a class="backup-link-btn" href="YOUR_FORM_LINK_HERE" target="_blank" rel="noopener">
+        <span class="backup-link-icon">📋</span>
+        <span class="backup-link-text">
+          <span class="backup-link-title">OML Biz Show Case — Register</span>
+          <span class="backup-link-desc">Fill out form · Use if scanner fails</span>
+        </span>
+        <span style="margin-left:auto;font-size:14px;opacity:.6;">↗</span>
+      </a>
+      <p class="fld-hint" style="margin-bottom:20px;">If the scanner or API is unavailable, use this link to register participants manually via the web form.</p>
+
+      <div style="margin-top:20px;">
+        <button class="btn btn-prime" style="width:100%" onclick="closeOv('setOverlay')">✓ Close</button>
+      </div>
+
+      <!-- Settings copyright -->
+      <div style="text-align:center;margin-top:16px;">
+        <span style="font-family:var(--m);font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;">© ICT · OML 2026 · All Rights Reserved</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><span class="td"></span><span id="toastTxt"></span></div>
+
+<script>
+// ── Constants ──
+const API_URL = 'https://special-office.onemoreapp.tech/api/e-menu/a12e2f6e-5d9d-4881-8b44-03133f41ab28/guest-check-in';
+const STORAGE_KEY = 'factoryScanner_history';
+
+// ── State — load from localStorage ──
+function loadScans() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw).map(s => ({ ...s, t: new Date(s.t) }));
+  } catch { return []; }
+}
+const S = { camOn: false, event: 'factory', scans: loadScans() };
+
+// ── Helpers ──
+const G = id => document.getElementById(id);
+
+function saveScans() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(S.scans)); } catch {}
+}
+
+// Render saved history on load
+updateStats();
+renderHistory();
+
+// ── Camera ──
+let html5QrCode = null;
+let recentBarcodes = new Set();
+
+function getQrBox(viewfinderWidth, viewfinderHeight) {
+  const minDim = Math.min(viewfinderWidth, viewfinderHeight);
+  const size   = minDim * 0.72;
+  return { width: size, height: Math.round(size * 0.55) };
+}
+
+function onScanSuccess(decodedText) {
+  if (recentBarcodes.has(decodedText)) return;
+  recentBarcodes.add(decodedText);
+  setTimeout(() => recentBarcodes.delete(decodedText), 3000);
+  const beam = G('scanBeam');
+  beam.style.background = 'linear-gradient(90deg,transparent,#fff,transparent)';
+  setTimeout(() => { beam.style.background = ''; }, 300);
+  handleScan(decodedText);
+}
+
+async function camStart() {
+  try {
+    html5QrCode = new Html5Qrcode('reader');
+
+    const config = {
+      fps: 15,
+      qrbox: getQrBox,
+      aspectRatio: 1.333,
+      videoConstraints: {
+        facingMode: { ideal: 'environment' },
+        width:  { ideal: 1280, min: 640 },
+        height: { ideal: 720,  min: 480 }
+      }
+    };
+
+    await html5QrCode.start(
+      { facingMode: 'environment' },
+      config,
+      onScanSuccess,
+      () => {}
+    );
+
+    G('camIdle').style.display = 'none';
+    G('camView').classList.add('active');
+    G('scanOverlay').classList.add('on');
+    G('scanBeam').classList.add('on');
+    G('camTip').classList.add('on');
+    G('startBtn').style.display = 'none';
+    G('stopBtn').style.display  = '';
+    G('warnBanner').classList.remove('on');
+    S.camOn = true;
+
+  } catch(e) {
+    console.error(e);
+    G('warnBanner').classList.add('on');
+    toast('Camera access denied', 'err');
+  }
+}
+
+async function camStop() {
+  S.camOn = false;
+  try {
+    if (html5QrCode) {
+      await html5QrCode.stop();
+      html5QrCode.clear();
+      html5QrCode = null;
+    }
+  } catch(e) { console.error(e); }
+
+  G('camIdle').style.display   = 'flex';
+  G('camView').classList.remove('active');
+  G('scanOverlay').classList.remove('on');
+  G('scanBeam').classList.remove('on');
+  G('camTip').classList.remove('on');
+  G('startBtn').style.display  = '';
+  G('stopBtn').style.display   = 'none';
+}
+
+G('startBtn').addEventListener('click', camStart);
+G('stopBtn').addEventListener('click', camStop);
+G('retryBtn').addEventListener('click', camStart);
+
+// ── Theme switching ──
+function setTheme(ev) {
+  const isMorning = ev === 'factory';
+  document.body.classList.toggle('evening', !isMorning);
+  const sky = G('skyOverlay');
+  sky.className = 'sky-overlay ' + (isMorning ? 'morning' : 'evening');
+  G('hdrDot').textContent  = isMorning ? '🌅' : '🌙';
+  G('hdrSub').textContent  = isMorning ? 'PARTICIPANT VALIDATION · MORNING' : 'PARTICIPANT VALIDATION · EVENING';
+}
+
+// ── Event tabs ──
+document.querySelectorAll('.seg-btn').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.seg-btn').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  S.event = b.dataset.ev;
+  setTheme(S.event);
+}));
+
+// ── Manual entry ──
+G('goBtn').addEventListener('click', () => {
+  const v = G('manInp').value.trim();
+  if (v) { handleScan(v); G('manInp').value = ''; }
+});
+G('manInp').addEventListener('keydown', e => { if (e.key === 'Enter') G('goBtn').click(); });
+
+// ── Core scan handler ──
+async function handleScan(code) {
+  const evName    = S.event === 'factory' ? 'Factory Visit' : 'Dinner';
+  const eventType = S.event === 'factory' ? '1' : '2';
+
+  const goBtn = G('goBtn');
+  goBtn.innerHTML = '<span class="spinner"></span>';
+  goBtn.disabled = true;
+
+  let apiSuccess = false;
+  let eligible   = false;
+  let itemName   = '';
+  let itemDesc   = '';
+  let qty        = 0;
+  let message    = '';
+
+  try {
+    const r = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ barcode: code, event_type: eventType })
+    });
+    const d = await r.json();
+    apiSuccess = d.success === true;
+    if (apiSuccess && d.data) {
+      eligible    = d.data.eligible === true;
+      itemName    = d.data.item_name        || '';
+      itemDesc    = d.data.item_description || '';
+      qty         = d.data.quantity         || 0;
+      message     = d.data.message          || '';
+    }
+  } catch(e) {
+    apiSuccess = false;
+    message    = 'Connection failed';
+    toast('API error — check connection', 'err');
+  }
+
+  goBtn.innerHTML = 'Go →';
+  goBtn.disabled  = false;
+
+  const state = !apiSuccess ? 'invalid' : eligible ? 'reward' : 'noreward';
+
+  const fl = G('flash');
+  const flashClass = state === 'reward' ? 'flash' : state === 'noreward' ? 'flash flash-orange' : 'flash flash-red';
+  fl.className = flashClass;
+  void fl.offsetWidth;
+  fl.classList.add('go');
+
+  const topClass   = state === 'reward' ? '' : state === 'noreward' ? ' noreward' : ' fail';
+  const glyphClass = state === 'reward' ? 'ok' : state === 'noreward' ? 'nr' : 'no';
+  const glyphText  = state === 'reward' ? 'REWARD!' : state === 'noreward' ? 'CHECKED IN' : 'INVALID';
+  const labelText  = state === 'reward' ? 'Eligible for Reward' : state === 'noreward' ? 'No Reward Available' : 'Not Recognised';
+  const subText    = state === 'reward' ? (itemName || 'REWARD AVAILABLE') : message || (state === 'noreward' ? 'NO REWARD AT THIS TIME' : 'NOT FOUND IN SYSTEM');
+
+  G('resTop').className     = 'res-top' + topClass;
+  G('resGlyph').className   = 'res-glyph ' + glyphClass;
+  G('resGlyph').textContent = glyphText;
+  G('resLabel').className   = 'res-label ' + glyphClass;
+  G('resLabel').textContent = labelText;
+  G('resSub').textContent   = subText;
+  G('rBC').textContent      = code;
+  G('rEV').textContent      = evName;
+  G('rEL').textContent      = state === 'reward' ? '✅ YES' : state === 'noreward' ? '⭕ NO' : '❌ N/A';
+  G('rEL').style.color      = state === 'reward' ? 'var(--accent)' : state === 'noreward' ? 'var(--orange)' : 'var(--red)';
+  G('rMSG').textContent     = message || (state === 'reward' ? (itemName || '—') : '—');
+
+  if (state === 'reward') {
+    G('resActs').innerHTML =
+      `<button class="btn-no" onclick="closeOv('resOverlay')">Cancel</button>
+       <button class="btn-yes" onclick="doGift()">🎁 Claim Reward</button>`;
+    G('giftItemName').textContent = itemName || 'Reward Item';
+    G('giftItemDesc').textContent = itemDesc || 'SHOW THIS SCREEN AT THE COUNTER';
+    G('giftQty').textContent      = qty || 1;
+  } else {
+    G('resActs').innerHTML =
+      `<button class="btn-yes" style="flex:1" onclick="closeOv('resOverlay')">Close</button>`;
+  }
+
+  openOv('resOverlay');
+  addScan(code, evName, state);
+}
+
+function doGift() { closeOv('resOverlay'); openOv('giftOverlay'); }
+G('giftCancel').addEventListener('click', () => closeOv('giftOverlay'));
+G('giftConfirm').addEventListener('click', () => {
+  closeOv('giftOverlay');
+  toast('Redemption confirmed! 🎁', 'ok');
+});
+
+// ── History ──
+function addScan(code, ev, state) {
+  S.scans.unshift({ code, ev, state, t: new Date() });
+  saveScans();
+  updateStats();
+  renderHistory();
+}
+
+function renderHistory() {
+  if (!S.scans.length) {
+    G('histBody').innerHTML = '<div class="hist-empty"><div class="hist-empty-ico">📷</div><p>READY TO SCAN</p></div>';
+    return;
+  }
+  const rows = S.scans.slice(0, 30).map(s => {
+    const ti   = s.t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const cls  = s.state === 'reward' ? 'v' : s.state === 'noreward' ? 'nr' : 'i';
+    const icon = s.state === 'reward' ? '🎁' : s.state === 'noreward' ? '⭕' : '✕';
+    const lbl  = s.state === 'reward' ? 'REWARD' : s.state === 'noreward' ? 'NO REWARD' : 'INVALID';
+    return `<div class="hist-item">
+      <div class="hist-status ${cls}">${icon}</div>
+      <div class="hist-info">
+        <div class="hist-code">${s.code}</div>
+        <div class="hist-meta">${s.ev} · ${ti}</div>
+      </div>
+      <span class="hist-badge ${cls}">${lbl}</span>
+    </div>`;
+  }).join('');
+  G('histBody').innerHTML = `<div class="hist-list">${rows}</div>`;
+}
+
+function updateStats() {
+  const t  = S.scans.length;
+  const v  = S.scans.filter(x => x.state === 'reward').length;
+  const iv = S.scans.filter(x => x.state === 'invalid').length;
+  function upd(id, val) {
+    const el = G(id);
+    el.textContent = val;
+    el.classList.remove('pop');
+    void el.offsetWidth;
+    el.classList.add('pop');
+  }
+  upd('sTotal', t); upd('sValid', v); upd('sInvalid', iv);
+}
+
+G('clrBtn').addEventListener('click', () => {
+  if (!S.scans.length) return;
+  S.scans = [];
+  saveScans();
+  renderHistory();
+  ['sTotal','sValid','sInvalid'].forEach(id => G(id).textContent = '0');
+  toast('History cleared', 'ok');
+});
+
+// ── Excel export ──
+G('xlsBtn').addEventListener('click', () => {
+  if (!S.scans.length) { toast('No scans to export', 'err'); return; }
+
+  const rows = S.scans.map((s, i) => ({
+    '#':        i + 1,
+    'Barcode':  s.code,
+    'Event':    s.ev,
+    'Result':   s.state === 'reward' ? 'REWARD' : s.state === 'noreward' ? 'NO REWARD' : 'INVALID',
+    'Date':     s.t.toLocaleDateString(),
+    'Time':     s.t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [
+    { wch: 5 }, { wch: 20 }, { wch: 16 }, { wch: 12 }, { wch: 12 }, { wch: 10 }
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Scan History');
+
+  const now = new Date();
+  const stamp = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+  XLSX.writeFile(wb, `factory_scans_${stamp}.xlsx`);
+  toast('Excel downloaded!', 'ok');
+});
+
+// ── Settings ──
+G('settingsBtn').addEventListener('click', () => openOv('setOverlay'));
+G('setClose').addEventListener('click', () => closeOv('setOverlay'));
+
+// ── Overlay helpers ──
+function openOv(id)  { G(id).classList.add('on'); }
+function closeOv(id) { G(id).classList.remove('on'); }
+document.querySelectorAll('.overlay').forEach(ov => {
+  ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('on'); });
+});
+
+// ── Toast ──
+let toastT = null;
+function toast(msg, type = 'ok') {
+  const el = G('toast');
+  G('toastTxt').textContent = msg;
+  el.className = 'toast ' + type;
+  void el.offsetWidth;
+  el.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => el.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>

@@ -12,64 +12,64 @@
 
 /* ══ MORNING THEME (Factory — default) ══ */
 :root{
-  --bg:#FFF8EC;
-  --s1:#FFF2D8;
-  --s2:#FFECC0;
-  --accent:#F59500;
-  --accent-glow:rgba(245,149,0,.35);
-  --accent-soft:rgba(245,149,0,.12);
-  --accent-border:rgba(245,149,0,.25);
-  --accent-05:rgba(245,149,0,.05);
-  --accent-08:rgba(245,149,0,.08);
-  --accent-10:rgba(245,149,0,.1);
-  --accent-15:rgba(245,149,0,.15);
-  --accent-16:rgba(245,149,0,.16);
-  --accent-20:rgba(245,149,0,.2);
-  --accent-30:rgba(245,149,0,.3);
-  --accent-40:rgba(245,149,0,.4);
-  --accent-45:rgba(245,149,0,.45);
-  --accent-50:rgba(245,149,0,.5);
-  --accent-07:rgba(245,149,0,.07);
+  --bg:#EEF3FA;
+  --s1:#E3ECF7;
+  --s2:#D4E3F3;
+  --accent:#034EA2;
+  --accent-glow:rgba(3,78,162,.35);
+  --accent-soft:rgba(3,78,162,.12);
+  --accent-border:rgba(3,78,162,.25);
+  --accent-05:rgba(3,78,162,.05);
+  --accent-08:rgba(3,78,162,.08);
+  --accent-10:rgba(3,78,162,.1);
+  --accent-15:rgba(3,78,162,.15);
+  --accent-16:rgba(3,78,162,.16);
+  --accent-20:rgba(3,78,162,.2);
+  --accent-30:rgba(3,78,162,.3);
+  --accent-40:rgba(3,78,162,.4);
+  --accent-45:rgba(3,78,162,.45);
+  --accent-50:rgba(3,78,162,.5);
+  --accent-07:rgba(3,78,162,.07);
   --red:#FF3B57;
   --orange:#FF8C00;
   --blue:#0099E6;
-  --txt:#1A120A;
-  --muted:#A08060;
-  --muted2:#E8D8B8;
-  --beam-shadow:rgba(245,149,0,.6);
+  --txt:#081828;
+  --muted:#5A7898;
+  --muted2:#B8CCE0;
+  --beam-shadow:rgba(3,78,162,.6);
   --r:16px;
   --d:'Unbounded',sans-serif;
   --b:'DM Sans',sans-serif;
   --m:'JetBrains Mono',monospace;
 }
 
-/* ══ EVENING THEME (Dinner) ══ */
+/* ══ EVENING THEME (Dinner) — Dark Blue Night ══ */
 body.evening{
-  --bg:#08050F;
-  --s1:#110D1C;
-  --s2:#1A1428;
-  --accent:#C9A84C;
-  --accent-glow:rgba(201,168,76,.35);
-  --accent-soft:rgba(201,168,76,.12);
-  --accent-border:rgba(201,168,76,.25);
-  --accent-05:rgba(201,168,76,.05);
-  --accent-08:rgba(201,168,76,.08);
-  --accent-10:rgba(201,168,76,.1);
-  --accent-15:rgba(201,168,76,.15);
-  --accent-16:rgba(201,168,76,.16);
-  --accent-20:rgba(201,168,76,.2);
-  --accent-30:rgba(201,168,76,.3);
-  --accent-40:rgba(201,168,76,.4);
-  --accent-45:rgba(201,168,76,.45);
-  --accent-50:rgba(201,168,76,.5);
-  --accent-07:rgba(201,168,76,.07);
-  --red:#FF3B57;
-  --orange:#FF8C00;
-  --blue:#8B6FFF;
-  --txt:#F0EAF8;
-  --muted:#6A5A80;
-  --muted2:#2A2040;
-  --beam-shadow:rgba(201,168,76,.6);
+  --bg:#010A18;
+  --s1:#051525;
+  --s2:#091E32;
+  --accent:#2B7FE0;
+  --accent-glow:rgba(43,127,224,.4);
+  --accent-soft:rgba(43,127,224,.14);
+  --accent-border:rgba(43,127,224,.3);
+  --accent-05:rgba(43,127,224,.05);
+  --accent-08:rgba(43,127,224,.08);
+  --accent-10:rgba(43,127,224,.1);
+  --accent-15:rgba(43,127,224,.15);
+  --accent-16:rgba(43,127,224,.16);
+  --accent-20:rgba(43,127,224,.2);
+  --accent-30:rgba(43,127,224,.3);
+  --accent-40:rgba(43,127,224,.4);
+  --accent-45:rgba(43,127,224,.45);
+  --accent-50:rgba(43,127,224,.5);
+  --accent-07:rgba(43,127,224,.07);
+  --red:#FF4D6A;
+  --orange:#FF9500;
+  --blue:#5BB8FF;
+  --txt:#C8DCF5;
+  --muted:#3A6A9A;
+  --muted2:#0D2540;
+  --beam-shadow:rgba(43,127,224,.7);
 }
 
 html{height:100%;-webkit-font-smoothing:antialiased;}
@@ -83,15 +83,16 @@ body{
 body::before{
   content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
   background:
-    radial-gradient(ellipse 100% 50% at 50% 0%, rgba(255,180,60,.18) 0%, transparent 60%),
+    radial-gradient(ellipse 100% 50% at 50% 0%, rgba(3,78,162,.12) 0%, transparent 60%),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
   transition:opacity .7s ease;
 }
 /* evening star background */
 body.evening::before{
   background:
-    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(120,80,200,.12) 0%, transparent 60%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+    radial-gradient(ellipse 70% 40% at 50% 0%, rgba(43,127,224,.15) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 25% at 20% 10%, rgba(10,60,140,.2) 0%, transparent 50%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
 }
 
 .shell{max-width:440px;margin:0 auto;padding:0 16px 120px;position:relative;z-index:1;}
@@ -104,14 +105,14 @@ body.evening::before{
 /* Morning sun rays */
 .sky-overlay.morning{
   background:
-    radial-gradient(ellipse 60% 40% at 50% -5%, rgba(255,200,80,.22) 0%, transparent 65%),
-    radial-gradient(ellipse 30% 20% at 50% 0%, rgba(255,220,100,.15) 0%, transparent 50%);
+    radial-gradient(ellipse 60% 40% at 50% -5%, rgba(3,78,162,.14) 0%, transparent 65%),
+    radial-gradient(ellipse 30% 20% at 50% 0%, rgba(30,120,220,.1) 0%, transparent 50%);
 }
-/* Evening stars + moon glow */
+/* Evening moon glow — deep night */
 .sky-overlay.evening{
   background:
-    radial-gradient(ellipse 50% 35% at 75% 5%, rgba(180,140,255,.1) 0%, transparent 60%),
-    radial-gradient(ellipse 20% 15% at 80% 3%, rgba(220,200,255,.12) 0%, transparent 40%);
+    radial-gradient(ellipse 45% 30% at 80% 4%, rgba(43,127,224,.18) 0%, transparent 55%),
+    radial-gradient(ellipse 20% 14% at 80% 3%, rgba(91,184,255,.15) 0%, transparent 35%);
 }
 .reveal{opacity:0;transform:translateY(22px);animation:revealUp .6s ease forwards;}
 @keyframes revealUp{to{opacity:1;transform:none;}}
@@ -119,7 +120,20 @@ body.evening::before{
 .d4{animation-delay:.26s;}.d5{animation-delay:.33s;}.d6{animation-delay:.40s;}
 .d7{animation-delay:.47s;}
 
-/* ══ Theme transition on all key elements ══ */
+/* ══ Day / Night badge ══ */
+.theme-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  font-family:var(--m);font-size:9px;letter-spacing:1.5px;font-weight:600;
+  padding:3px 9px;border-radius:20px;margin-top:4px;
+  text-transform:uppercase;transition:all .5s ease;
+}
+body:not(.evening) .theme-badge{
+  background:rgba(3,78,162,.12);border:1px solid rgba(3,78,162,.25);color:#034EA2;
+}
+body.evening .theme-badge{
+  background:rgba(43,127,224,.15);border:1px solid rgba(43,127,224,.35);color:#5BB8FF;
+  box-shadow:0 0 10px rgba(43,127,224,.2);
+}
 .cam-block,.manual,.stat,.history,.seg,.sheet,.warn,
 .inp,.btn-prime,.btn-ghost,.ico-btn,.go-btn,.hdr-dot{
   transition:background .6s ease, border-color .6s ease, box-shadow .6s ease, color .4s ease;
@@ -165,12 +179,18 @@ body.evening::before{
   display:block;
 }
 /* Hide html5-qrcode's own UI elements — we use our own overlay */
-#reader img, #reader canvas{ display:none!important; }
+#reader img{ display:none!important; }
+#reader canvas{ position:absolute!important;opacity:0!important;pointer-events:none!important; }
 #reader__scan_region{ width:100%!important;height:100%!important; }
 #reader__dashboard{ display:none!important; }
 
 /* idle */
-.cam-idle{display:flex;flex-direction:column;align-items:center;gap:16px;animation:revealUp .5s ease both;}
+.cam-idle{
+  position:absolute;inset:0;z-index:2;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:16px;animation:revealUp .5s ease both;
+  background:var(--s1);
+}
 .cam-idle-ring{
   width:80px;height:80px;border-radius:50%;
   border:1px solid var(--muted2);
@@ -238,7 +258,7 @@ body.evening::before{
   background:var(--accent);color:#fff;
   box-shadow:0 4px 24px var(--accent-30),0 1px 0 rgba(255,255,255,.15) inset;
 }
-body:not(.evening) .btn-prime{color:#2A1400;}
+body:not(.evening) .btn-prime{color:#fff;}
 .btn-prime:hover{box-shadow:0 6px 36px var(--accent-50);transform:translateY(-1px);}
 .btn-prime:active{transform:none;box-shadow:none;}
 .btn-ghost{background:var(--s2);border:1px solid var(--muted2);color:var(--muted);}
@@ -281,7 +301,7 @@ body:not(.evening) .btn-prime{color:#2A1400;}
   transition:all .2s;white-space:nowrap;
   box-shadow:0 4px 20px var(--accent-border);
 }
-body:not(.evening) .go-btn{color:#2A1400;}
+body:not(.evening) .go-btn{color:#fff;}
 .go-btn:hover{box-shadow:0 4px 28px var(--accent-45);transform:translateY(-1px);}
 
 /* ══ Stats ══ */
@@ -392,7 +412,7 @@ body:not(.evening) .go-btn{color:#2A1400;}
   font-family:var(--b);font-size:14px;font-weight:800;border:none;cursor:pointer;
   transition:all .2s;box-shadow:0 4px 24px var(--accent-30);
 }
-body:not(.evening) .btn-yes{color:#2A1400;}
+body:not(.evening) .btn-yes{color:#fff;}
 .btn-yes:hover{box-shadow:0 6px 36px var(--accent-50);transform:translateY(-1px);}
 
 .res-top.noreward::before{background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(255,140,0,.07) 0%,transparent 70%);}
@@ -519,10 +539,11 @@ body:not(.evening) .btn-yes{color:#2A1400;}
   <!-- HEADER -->
   <div class="hdr reveal d1">
     <div class="hdr-brand">
-      <div class="hdr-dot" id="hdrDot">🌅</div>
+      <div class="hdr-dot" id="hdrDot">☀️</div>
       <div>
-        <div class="hdr-name">FACTORY SCANNER</div>
-        <div class="hdr-sub" id="hdrSub">PARTICIPANT VALIDATION · MORNING</div>
+        <div class="hdr-name" id="hdrName">FACTORY SCANNER</div>
+        <div class="hdr-sub" id="hdrSub">PARTICIPANT VALIDATION · DAY</div>
+        <div class="theme-badge" id="themeBadge">☀️ DAY MODE</div>
       </div>
     </div>
     <div class="hdr-actions">
@@ -768,13 +789,16 @@ async function camStart() {
     html5QrCode = new Html5Qrcode('reader');
 
     const config = {
-      fps: 15,
+      fps: 30,
       qrbox: getQrBox,
       aspectRatio: 1.333,
+      experimentalFeatures: { useBarCodeDetectorIfSupported: true },
       videoConstraints: {
         facingMode: { ideal: 'environment' },
-        width:  { ideal: 1280, min: 640 },
-        height: { ideal: 720,  min: 480 }
+        width:  { ideal: 1920, min: 1280 },
+        height: { ideal: 1080, min: 720 },
+        focusMode: { ideal: 'continuous' },
+        advanced: [{ focusMode: 'continuous' }]
       }
     };
 
@@ -831,8 +855,10 @@ function setTheme(ev) {
   document.body.classList.toggle('evening', !isMorning);
   const sky = G('skyOverlay');
   sky.className = 'sky-overlay ' + (isMorning ? 'morning' : 'evening');
-  G('hdrDot').textContent  = isMorning ? '🌅' : '🌙';
-  G('hdrSub').textContent  = isMorning ? 'PARTICIPANT VALIDATION · MORNING' : 'PARTICIPANT VALIDATION · EVENING';
+  G('hdrDot').textContent    = isMorning ? '☀️' : '🌙';
+  G('hdrSub').textContent    = isMorning ? 'PARTICIPANT VALIDATION · DAY' : 'PARTICIPANT VALIDATION · NIGHT';
+  G('hdrName').textContent   = isMorning ? 'FACTORY SCANNER' : 'DINNER SCANNER';
+  G('themeBadge').textContent = isMorning ? '☀️ DAY MODE' : '🌙 NIGHT MODE';
 }
 
 // ── Event tabs ──
@@ -1043,5 +1069,4 @@ function toast(msg, type = 'ok') {
 }
 </script>
 </body>
-
 </html>

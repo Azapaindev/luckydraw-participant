@@ -247,6 +247,35 @@ body.evening .theme-badge{
 
 .cam-ctrls{display:flex;gap:10px;padding:12px;}
 
+/* ══ Camera toolbar (switch + torch) ══ */
+.cam-toolbar{
+  position:absolute;top:10px;right:10px;z-index:10;
+  display:none;flex-direction:column;gap:8px;
+}
+.cam-toolbar.on{display:flex;}
+.cam-tool-btn{
+  width:40px;height:40px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.18);color:#fff;
+  transition:all .2s;box-shadow:0 2px 12px rgba(0,0,0,.4);
+  cursor:pointer;position:relative;
+}
+.cam-tool-btn:hover{background:rgba(0,0,0,.78);border-color:rgba(255,255,255,.4);}
+.cam-tool-btn:disabled{opacity:.3;cursor:not-allowed;}
+.cam-tool-btn.torch-on{
+  background:rgba(255,218,0,.88);border-color:rgba(255,218,0,1);color:#1a1000;
+  box-shadow:0 0 18px rgba(255,218,0,.55);
+}
+.cam-badge{
+  position:absolute;top:-5px;right:-5px;
+  background:var(--accent);color:#fff;
+  font-size:8px;font-family:var(--m);font-weight:700;
+  min-width:15px;height:15px;border-radius:8px;padding:0 3px;
+  display:flex;align-items:center;justify-content:center;
+  border:1.5px solid var(--bg);line-height:1;
+}
+
 /* ══ Buttons ══ */
 .btn{
   flex:1;border:none;border-radius:12px;padding:13px 20px;
@@ -577,6 +606,10 @@ body:not(.evening) .btn-yes{color:#fff;}
         <div class="br-tr"></div>
         <div class="br-bl"></div>
       </div>
+      <div class="cam-toolbar" id="camToolbar">
+        <button class="cam-tool-btn" id="torchBtn" title="Toggle Flashlight">🔦<span class="cam-badge" id="torchBadge" style="display:none">ON</span></button>
+        <button class="cam-tool-btn" id="switchBtn" title="Switch Camera">🔄<span class="cam-badge" id="camIdxBadge">1</span></button>
+      </div>
       <div class="scan-beam" id="scanBeam"></div>
       <div class="flash" id="flash"></div>
     </div>
@@ -765,8 +798,13 @@ updateStats();
 renderHistory();
 
 // ── Camera ──
-let html5QrCode = null;
+let html5QrCode  = null;
 let recentBarcodes = new Set();
+let cameraList   = [];
+let camIndex     = 0;
+let torchOn      = false;
+let torchSupported = false;
+let activeTrack  = null;
 
 function getQrBox(viewfinderWidth, viewfinderHeight) {
   const minDim = Math.min(viewfinderWidth, viewfinderHeight);
@@ -784,9 +822,63 @@ function onScanSuccess(decodedText) {
   handleScan(decodedText);
 }
 
-async function camStart() {
+function showCamUI(active) {
+  G('camIdle').style.display   = active ? 'none' : 'flex';
+  G('camView').classList.toggle('active', active);
+  G('scanOverlay').classList.toggle('on', active);
+  G('scanBeam').classList.toggle('on', active);
+  G('camTip').classList.toggle('on', active);
+  G('camToolbar').classList.toggle('on', active);
+  G('startBtn').style.display  = active ? 'none' : '';
+  G('stopBtn').style.display   = active ? '' : 'none';
+}
+
+async function getActiveTrack() {
   try {
+    if (!html5QrCode) return null;
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    stream.getTracks().forEach(t => t.stop()); // just checking; real track is in html5QrCode
+    // Access the video element injected by html5-qrcode
+    const video = document.querySelector('#reader video');
+    if (!video || !video.srcObject) return null;
+    const tracks = video.srcObject.getVideoTracks();
+    return tracks.length ? tracks[0] : null;
+  } catch { return null; }
+}
+
+async function applyTorch(on) {
+  const video = document.querySelector('#reader video');
+  if (!video || !video.srcObject) return false;
+  const tracks = video.srcObject.getVideoTracks();
+  if (!tracks.length) return false;
+  const track = tracks[0];
+  const caps = track.getCapabilities ? track.getCapabilities() : {};
+  if (!caps.torch) return false;
+  try {
+    await track.applyConstraints({ advanced: [{ torch: on }] });
+    return true;
+  } catch { return false; }
+}
+
+async function checkTorchSupport() {
+  const video = document.querySelector('#reader video');
+  if (!video || !video.srcObject) return false;
+  const tracks = video.srcObject.getVideoTracks();
+  if (!tracks.length) return false;
+  const caps = tracks[0].getCapabilities ? tracks[0].getCapabilities() : {};
+  return !!caps.torch;
+}
+
+async function camStart(deviceId) {
+  try {
+    // Reset torch state
+    torchOn = false;
+    G('torchBtn').classList.remove('torch-on');
+    G('torchBadge').style.display = 'none';
+
     html5QrCode = new Html5Qrcode('reader');
+
+    const cameraId = deviceId || { facingMode: 'environment' };
 
     const config = {
       fps: 30,
@@ -794,40 +886,44 @@ async function camStart() {
       aspectRatio: 1.333,
       experimentalFeatures: { useBarCodeDetectorIfSupported: true },
       videoConstraints: {
-        facingMode: { ideal: 'environment' },
         width:  { ideal: 1920, min: 1280 },
         height: { ideal: 1080, min: 720 },
-        focusMode: { ideal: 'continuous' },
+        focusMode:  'continuous',
         advanced: [{ focusMode: 'continuous' }]
       }
     };
 
-    await html5QrCode.start(
-      { facingMode: 'environment' },
-      config,
-      onScanSuccess,
-      () => {}
-    );
+    await html5QrCode.start(cameraId, config, onScanSuccess, () => {});
 
-    G('camIdle').style.display = 'none';
-    G('camView').classList.add('active');
-    G('scanOverlay').classList.add('on');
-    G('scanBeam').classList.add('on');
-    G('camTip').classList.add('on');
-    G('startBtn').style.display = 'none';
-    G('stopBtn').style.display  = '';
+    showCamUI(true);
     G('warnBanner').classList.remove('on');
     S.camOn = true;
+
+    // Check torch support after small delay (stream needs to settle)
+    setTimeout(async () => {
+      torchSupported = await checkTorchSupport();
+      G('torchBtn').disabled = !torchSupported;
+      if (!torchSupported) {
+        G('torchBtn').title = 'Flashlight not supported on this camera';
+        G('torchBtn').style.opacity = '0.35';
+      } else {
+        G('torchBtn').title = 'Toggle Flashlight';
+        G('torchBtn').style.opacity = '';
+      }
+    }, 800);
 
   } catch(e) {
     console.error(e);
     G('warnBanner').classList.add('on');
     toast('Camera access denied', 'err');
+    try { if (html5QrCode) { html5QrCode.clear(); html5QrCode = null; } } catch {}
   }
 }
 
 async function camStop() {
   S.camOn = false;
+  // Turn off torch first
+  if (torchOn) { try { await applyTorch(false); } catch {} torchOn = false; }
   try {
     if (html5QrCode) {
       await html5QrCode.stop();
@@ -835,19 +931,59 @@ async function camStop() {
       html5QrCode = null;
     }
   } catch(e) { console.error(e); }
-
-  G('camIdle').style.display   = 'flex';
-  G('camView').classList.remove('active');
-  G('scanOverlay').classList.remove('on');
-  G('scanBeam').classList.remove('on');
-  G('camTip').classList.remove('on');
-  G('startBtn').style.display  = '';
-  G('stopBtn').style.display   = 'none';
+  showCamUI(false);
+  G('torchBtn').classList.remove('torch-on');
+  G('torchBadge').style.display = 'none';
 }
 
-G('startBtn').addEventListener('click', camStart);
+// ── Load camera list once ──
+async function loadCameras() {
+  try {
+    cameraList = await Html5Qrcode.getCameras();
+    if (cameraList.length > 1) {
+      G('camIdxBadge').textContent = '1/' + cameraList.length;
+    } else {
+      G('switchBtn').style.display = 'none'; // hide if only one camera
+    }
+  } catch { cameraList = []; }
+}
+loadCameras();
+
+G('startBtn').addEventListener('click', () => {
+  const id = cameraList.length ? cameraList[camIndex].id : undefined;
+  camStart(id);
+});
 G('stopBtn').addEventListener('click', camStop);
-G('retryBtn').addEventListener('click', camStart);
+G('retryBtn').addEventListener('click', () => {
+  const id = cameraList.length ? cameraList[camIndex].id : undefined;
+  camStart(id);
+});
+
+// ── Switch camera ──
+G('switchBtn').addEventListener('click', async () => {
+  if (!S.camOn || cameraList.length < 2) return;
+  G('switchBtn').disabled = true;
+  await camStop();
+  camIndex = (camIndex + 1) % cameraList.length;
+  G('camIdxBadge').textContent = (camIndex + 1) + '/' + cameraList.length;
+  await camStart(cameraList[camIndex].id);
+  G('switchBtn').disabled = false;
+});
+
+// ── Torch toggle ──
+G('torchBtn').addEventListener('click', async () => {
+  if (!torchSupported) { toast('Flashlight not available', 'err'); return; }
+  torchOn = !torchOn;
+  const ok = await applyTorch(torchOn);
+  if (ok) {
+    G('torchBtn').classList.toggle('torch-on', torchOn);
+    G('torchBadge').style.display = torchOn ? 'flex' : 'none';
+    toast(torchOn ? '🔦 Flashlight ON' : '🔦 Flashlight OFF', 'ok');
+  } else {
+    torchOn = false;
+    toast('Flashlight not supported', 'err');
+  }
+});
 
 // ── Theme switching ──
 function setTheme(ev) {

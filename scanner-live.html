@@ -570,7 +570,7 @@ body:not(.evening) .btn-yes{color:#fff;}
     <div class="hdr-brand">
       <div class="hdr-dot" id="hdrDot">☀️</div>
       <div>
-        <div class="hdr-name" id="hdrName">FACTORY SCANNER v1.2</div>
+        <div class="hdr-name" id="hdrName">FACTORY SCANNER V1.3</div>
         <div class="hdr-sub" id="hdrSub">PARTICIPANT VALIDATION · DAY</div>
         <div class="theme-badge" id="themeBadge">☀️ DAY MODE</div>
       </div>
@@ -949,12 +949,12 @@ G('switchBtn').style.display = 'none';
 // ── ALWAYS start with back camera via facingMode — never use deviceId on first open ──
 G('startBtn').addEventListener('click', () => {
   camIndex = 0;
-  camStart({ facingMode: { exact: 'environment' } });
+  camStart({ facingMode: "environment" });
 });
 G('stopBtn').addEventListener('click', camStop);
 G('retryBtn').addEventListener('click', () => {
   camIndex = 0;
-  camStart({ facingMode: { exact: 'environment' } });
+  camStart({ facingMode: "environment" });
 });
 
 // ── Switch between back lenses (only available after first start) ──

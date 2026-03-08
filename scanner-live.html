@@ -800,12 +800,13 @@ renderHistory();
 // ── Camera ──
 let html5QrCode    = null;
 let recentBarcodes = new Set();
-let backCameras    = [];   // back-facing only
+let backCameras    = [];   // back-facing only, populated AFTER permission
 let camIndex       = 0;
 let torchOn        = false;
 let torchSupported = false;
+let camStarted     = false; // true after first successful start
 
-// Label a back camera nicely: "Wide", "Ultra Wide", "Telephoto", or "Lens N"
+// Label a back camera nicely
 function camLabel(cam, idx) {
   const lbl = (cam.label || '').toLowerCase();
   if (lbl.includes('ultra') || lbl.includes('0.5') || lbl.includes('wide angle')) return 'Ultra Wide';
@@ -816,12 +817,8 @@ function camLabel(cam, idx) {
 
 function isBackCamera(cam) {
   const lbl = (cam.label || '').toLowerCase();
-  // Exclude obvious front cameras
+  if (!lbl) return true; // unknown — include, filter later by facingMode
   if (lbl.includes('front') || lbl.includes('facing front') || lbl.includes('user')) return false;
-  // Include obvious back cameras
-  if (lbl.includes('back') || lbl.includes('rear') || lbl.includes('facing back') ||
-      lbl.includes('environment') || lbl.includes('0, facing')) return true;
-  // If label is empty or ambiguous, include it (likely the only/default cam)
   return true;
 }
 
@@ -851,7 +848,6 @@ function showCamUI(active) {
   G('stopBtn').style.display  = active ? '' : 'none';
 }
 
-// ── Use html5QrCode's own API to apply torch ──
 async function setTorch(on) {
   if (!html5QrCode) return false;
   try {
@@ -859,10 +855,7 @@ async function setTorch(on) {
     if (!caps || !caps.torch) return false;
     await html5QrCode.applyVideoConstraints({ advanced: [{ torch: on }] });
     return true;
-  } catch(e) {
-    console.warn('Torch error:', e);
-    return false;
-  }
+  } catch(e) { console.warn('Torch error:', e); return false; }
 }
 
 function updateTorchUI() {
@@ -871,11 +864,27 @@ function updateTorchUI() {
   G('torchBadge').textContent   = 'ON';
 }
 
-async function camStart(deviceId) {
+// After permission is granted, re-read cameras with real labels
+async function loadBackCamerasAfterPermission() {
+  try {
+    const all = await Html5Qrcode.getCameras(); // now labels are populated
+    const backs = all.filter(isBackCamera);
+    backCameras = backs.length ? backs : all;
+
+    if (backCameras.length > 1) {
+      G('switchBtn').style.display = '';
+      G('camIdxBadge').textContent = camLabel(backCameras[camIndex], camIndex);
+    } else {
+      G('switchBtn').style.display = 'none';
+    }
+  } catch { /* keep defaults */ }
+}
+
+async function camStart(cameraConstraint) {
   try {
     torchOn = false;
     updateTorchUI();
-    G('torchBtn').disabled    = true;
+    G('torchBtn').disabled      = true;
     G('torchBtn').style.opacity = '0.35';
 
     html5QrCode = new Html5Qrcode('reader');
@@ -892,21 +901,25 @@ async function camStart(deviceId) {
       }
     };
 
-    const cameraId = deviceId || { facingMode: 'environment' };
-    await html5QrCode.start(cameraId, config, onScanSuccess, () => {});
+    await html5QrCode.start(cameraConstraint, config, onScanSuccess, () => {});
 
     showCamUI(true);
     G('warnBanner').classList.remove('on');
     S.camOn = true;
 
-    // Wait for stream to settle, then check torch support via library API
+    // First time: load real camera list now that permission is granted
+    if (!camStarted) {
+      camStarted = true;
+      await loadBackCamerasAfterPermission();
+    }
+
+    // Check torch support
     setTimeout(async () => {
       try {
         const caps = html5QrCode.getRunningTrackCapabilities();
         torchSupported = !!(caps && caps.torch);
       } catch { torchSupported = false; }
-
-      G('torchBtn').disabled     = !torchSupported;
+      G('torchBtn').disabled      = !torchSupported;
       G('torchBtn').style.opacity = torchSupported ? '' : '0.35';
       G('torchBtn').title         = torchSupported
         ? 'Toggle Flashlight' : 'Flashlight not available on this lens';
@@ -930,41 +943,30 @@ async function camStop() {
   updateTorchUI();
 }
 
-// ── Load cameras, filter back-facing only ──
-async function loadCameras() {
-  try {
-    const all = await Html5Qrcode.getCameras();
-    backCameras = all.filter(isBackCamera);
-    if (backCameras.length === 0) backCameras = all; // fallback: use all if none flagged as back
+// Hide switch button until we know there are multiple back cameras
+G('switchBtn').style.display = 'none';
 
-    if (backCameras.length > 1) {
-      G('camIdxBadge').textContent = camLabel(backCameras[0], 0);
-    } else {
-      G('switchBtn').style.display = 'none';
-    }
-  } catch { backCameras = []; }
-}
-loadCameras();
-
+// ── ALWAYS start with back camera via facingMode — never use deviceId on first open ──
 G('startBtn').addEventListener('click', () => {
-  const id = backCameras.length ? backCameras[camIndex].id : undefined;
-  camStart(id);
+  camIndex = 0;
+  camStart({ facingMode: { exact: 'environment' } });
 });
 G('stopBtn').addEventListener('click', camStop);
 G('retryBtn').addEventListener('click', () => {
-  const id = backCameras.length ? backCameras[camIndex].id : undefined;
-  camStart(id);
+  camIndex = 0;
+  camStart({ facingMode: { exact: 'environment' } });
 });
 
-// ── Switch between back lenses ──
+// ── Switch between back lenses (only available after first start) ──
 G('switchBtn').addEventListener('click', async () => {
   if (!S.camOn || backCameras.length < 2) return;
   G('switchBtn').disabled = true;
   await camStop();
   camIndex = (camIndex + 1) % backCameras.length;
   const next = backCameras[camIndex];
-  G('camIdxBadge').textContent = camLabel(next, camIndex);
-  toast('📷 Switched to ' + camLabel(next, camIndex), 'ok');
+  const label = camLabel(next, camIndex);
+  G('camIdxBadge').textContent = label;
+  toast('📷 ' + label, 'ok');
   await camStart(next.id);
   G('switchBtn').disabled = false;
 });
@@ -980,7 +982,7 @@ G('torchBtn').addEventListener('click', async () => {
   } else {
     torchOn = false;
     updateTorchUI();
-    toast('Flashlight failed — try the main lens', 'err');
+    toast('Flashlight failed — try the Wide lens', 'err');
   }
 });
 

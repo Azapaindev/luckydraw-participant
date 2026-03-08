@@ -880,7 +880,8 @@ async function loadBackCamerasAfterPermission() {
   } catch { /* keep defaults */ }
 }
 
-async function camStart(cameraConstraint) {
+// camMode: 'environment' for back cam (default), or a deviceId string for lens switching
+async function camStart(camMode) {
   try {
     torchOn = false;
     updateTorchUI();
@@ -889,19 +890,34 @@ async function camStart(cameraConstraint) {
 
     html5QrCode = new Html5Qrcode('reader');
 
+    const isDeviceId = camMode && camMode !== 'environment';
+
+    // Build videoConstraints — facingMode OR deviceId, never both
+    const videoConstraints = isDeviceId
+      ? {
+          deviceId: { exact: camMode },
+          width:  { ideal: 1920, min: 1280 },
+          height: { ideal: 1080, min: 720 },
+          advanced: [{ focusMode: 'continuous' }]
+        }
+      : {
+          facingMode: { ideal: 'environment' },
+          width:  { ideal: 1920, min: 1280 },
+          height: { ideal: 1080, min: 720 },
+          advanced: [{ focusMode: 'continuous' }]
+        };
+
     const config = {
       fps: 30,
       qrbox: getQrBox,
       aspectRatio: 1.333,
       experimentalFeatures: { useBarCodeDetectorIfSupported: true },
-      videoConstraints: {
-        width:  { ideal: 1920, min: 1280 },
-        height: { ideal: 1080, min: 720 },
-        advanced: [{ focusMode: 'continuous' }]
-      }
+      videoConstraints
     };
 
-    await html5QrCode.start(cameraConstraint, config, onScanSuccess, () => {});
+    // First arg: use facingMode string or deviceId — must match videoConstraints
+    const cameraArg = isDeviceId ? camMode : { facingMode: 'environment' };
+    await html5QrCode.start(cameraArg, config, onScanSuccess, () => {});
 
     showCamUI(true);
     G('warnBanner').classList.remove('on');
@@ -946,15 +962,15 @@ async function camStop() {
 // Hide switch button until we know there are multiple back cameras
 G('switchBtn').style.display = 'none';
 
-// ── ALWAYS start with back camera via facingMode — never use deviceId on first open ──
+// ── ALWAYS start with back camera ──
 G('startBtn').addEventListener('click', () => {
   camIndex = 0;
-  camStart({ facingMode: "environment" });
+  camStart('environment');
 });
 G('stopBtn').addEventListener('click', camStop);
 G('retryBtn').addEventListener('click', () => {
   camIndex = 0;
-  camStart({ facingMode: "environment" });
+  camStart('environment');
 });
 
 // ── Switch between back lenses (only available after first start) ──
@@ -967,7 +983,7 @@ G('switchBtn').addEventListener('click', async () => {
   const label = camLabel(next, camIndex);
   G('camIdxBadge').textContent = label;
   toast('📷 ' + label, 'ok');
-  await camStart(next.id);
+  await camStart(next.id); // deviceId string → triggers isDeviceId branch
   G('switchBtn').disabled = false;
 });
 

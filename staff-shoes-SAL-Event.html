@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<title>Shoe Size Claim - Staff</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700;900&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{--bg:#0a0f1a;--s1:#111827;--s2:#1a2332;--accent:#00d4aa;--red:#ff4757;--orange:#ff8c00;--txt:#e8ecf1;--muted:#6b7a8f;--muted2:#2a3544;--r:16px;--d:'Unbounded',sans-serif;--b:'DM Sans',sans-serif;--m:'JetBrains Mono',monospace;}
+html{height:100%;-webkit-font-smoothing:antialiased;}
+body{background:var(--bg);color:var(--txt);font-family:var(--b);min-height:100%;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 80% 50% at 50% 0%, rgba(0,212,170,.08) 0%, transparent 60%);}
+.shell{max-width:480px;margin:0 auto;padding:0 16px 40px;position:relative;z-index:1;}
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 0 12px;}
+.hdr-brand{display:flex;align-items:center;gap:10px;}
+.hdr-dot{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#00b894);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 0 20px rgba(0,212,170,.4);}
+.hdr-name{font-family:var(--d);font-size:16px;font-weight:700;}
+.hdr-sub{font-family:var(--m);font-size:9px;color:var(--muted);letter-spacing:1.5px;margin-top:2px;}
+.conn-status{display:flex;align-items:center;gap:4px;font-family:var(--m);font-size:8px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;}
+.conn-dot{width:5px;height:5px;border-radius:50%;background:var(--muted);}
+.conn-dot.online{background:var(--accent);box-shadow:0 0 6px var(--accent);}
+.data-loaded{background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.3);border-radius:8px;padding:10px 14px;margin-bottom:12px;display:none;align-items:center;gap:10px;}
+.data-loaded.show{display:flex;}
+.data-loaded-icon{font-size:18px;}
+.data-loaded-text{font-family:var(--m);font-size:11px;color:var(--accent);}
+.search-wrap{background:var(--s1);border:1px solid var(--muted2);border-radius:var(--r);padding:14px;margin-bottom:12px;}
+.search-label{font-family:var(--m);font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:10px;}
+.search-row{display:flex;gap:8px;}
+.inp{flex:1;background:var(--s2);border:1px solid var(--muted2);border-radius:10px;padding:12px 14px;font-family:var(--b);font-size:14px;color:var(--txt);outline:none;transition:all .2s;}
+.inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,212,170,.08);}
+.inp::placeholder{color:var(--muted);}
+.go-btn{background:linear-gradient(135deg,var(--accent),#00b894);color:#0a0f1a;border:none;border-radius:10px;padding:0 18px;cursor:pointer;font-family:var(--b);font-size:13px;font-weight:700;transition:all .2s;white-space:nowrap;box-shadow:0 4px 16px rgba(0,212,170,.3);}
+.go-btn:hover{box-shadow:0 6px 24px rgba(0,212,170,.5);transform:translateY(-1px);}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
+.stat{background:var(--s1);border:1px solid var(--muted2);border-radius:12px;padding:12px 8px;text-align:center;}
+.stat-n{font-family:var(--d);font-size:20px;font-weight:900;margin-bottom:2px;}
+.stat-n.t{color:var(--txt);}.stat-n.v{color:var(--accent);text-shadow:0 0 16px rgba(0,212,170,.4);}.stat-n.c{color:var(--orange);}
+.stat-lbl{font-family:var(--m);font-size:8px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);}
+.not-found{background:var(--s1);border:1px solid var(--muted2);border-radius:var(--r);padding:30px 20px;text-align:center;margin-bottom:12px;display:none;}
+.not-found.show{display:block;animation:slideIn .3s ease;}
+.not-found-icon{font-size:48px;margin-bottom:12px;}
+.not-found-title{font-family:var(--d);font-size:18px;font-weight:700;color:var(--red);margin-bottom:6px;}
+.not-found-text{font-family:var(--b);font-size:13px;color:var(--txt);margin-bottom:4px;}
+.not-found-sub{font-family:var(--m);font-size:11px;color:var(--muted);}
+.result-card{background:var(--s1);border:1px solid var(--muted2);border-radius:var(--r);overflow:hidden;margin-bottom:12px;display:none;}
+.result-card.show{display:block;animation:slideIn .3s ease;}
+@keyframes slideIn{from{opacity:0;transform:translateY(10px);}}
+.result-header{padding:14px 16px;text-align:center;border-bottom:1px solid var(--muted2);background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(0,212,170,.05) 0%,transparent 70%);}
+.result-icon{font-size:32px;margin-bottom:4px;}
+.result-title{font-family:var(--d);font-size:16px;font-weight:700;color:var(--txt);}
+.result-sub{font-family:var(--m);font-size:10px;color:var(--muted);margin-top:2px;letter-spacing:1px;}
+.result-body{padding:14px 16px;}
+.info-inline{display:flex;gap:8px;margin-bottom:12px;}
+.info-badge{flex:1;background:var(--s2);border-radius:8px;padding:8px 10px;text-align:center;}
+.info-badge-key{font-family:var(--m);font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;}
+.info-badge-val{font-family:var(--b);font-size:12px;font-weight:600;color:var(--txt);}
+.size-display{background:linear-gradient(135deg,rgba(0,212,170,.12),rgba(0,212,170,.05));border:2px solid rgba(0,212,170,.25);border-radius:14px;padding:16px 14px;text-align:center;margin-bottom:12px;}
+.size-label{font-family:var(--m);font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;}
+.size-value{font-family:var(--d);font-size:56px;font-weight:900;color:var(--accent);text-shadow:0 0 30px rgba(0,212,170,.5);line-height:1;margin:4px 0;}
+.size-unit{font-family:var(--m);font-size:11px;color:var(--muted);letter-spacing:1px;}
+.claim-btn{width:100%;padding:16px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#00b894);color:#0a0f1a;border:none;font-family:var(--b);font-size:15px;font-weight:800;cursor:pointer;transition:all .2s;box-shadow:0 6px 24px rgba(0,212,170,.3);display:flex;align-items:center;justify-content:center;gap:8px;}
+.claim-btn:hover{box-shadow:0 8px 32px rgba(0,212,170,.5);transform:translateY(-2px);}
+.claim-btn:disabled{background:var(--s2);color:var(--muted);box-shadow:none;cursor:not-allowed;}
+.claim-btn.claimed{background:var(--s2);border:1px solid rgba(0,212,170,.25);color:var(--accent);box-shadow:0 0 16px rgba(0,212,170,.1);}
+.history{background:var(--s1);border:1px solid var(--muted2);border-radius:var(--r);overflow:hidden;}
+.hist-hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--muted2);}
+.hist-title{font-family:var(--b);font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;}
+.hist-title-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);animation:blink 2s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+.hist-actions{display:flex;gap:5px;}
+.xls-btn{font-family:var(--m);font-size:9px;color:var(--accent);background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.2);border-radius:6px;padding:5px 10px;cursor:pointer;transition:all .2s;letter-spacing:.5px;}
+.hist-empty{padding:24px 16px;text-align:center;}
+.hist-empty-ico{width:44px;height:44px;border-radius:50%;background:var(--s2);border:1px solid var(--muted2);display:flex;align-items:center;justify-content:center;margin:0 auto 10px;font-size:20px;opacity:.5;}
+.hist-empty p{font-family:var(--m);font-size:10px;color:var(--muted);letter-spacing:1px;}
+.hist-list{max-height:200px;overflow-y:auto;}
+.hist-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--muted2);animation:itemIn .25s ease both;}
+@keyframes itemIn{from{opacity:0;transform:translateX(-12px);}to{opacity:1;transform:none;}}
+.hist-item:last-child{border-bottom:none;}
+.hist-avatar{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#00b894);display:flex;align-items:center;justify-content:center;font-family:var(--d);font-size:12px;font-weight:700;color:#0a0f1a;flex-shrink:0;}
+.hist-info{flex:1;min-width:0;}
+.hist-name{font-family:var(--b);font-size:13px;font-weight:600;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hist-meta{font-family:var(--m);font-size:9px;color:var(--muted);margin-top:1px;}
+.hist-size{font-family:var(--d);font-size:16px;font-weight:700;color:var(--accent);flex-shrink:0;}
+.hist-status{font-family:var(--m);font-size:8px;font-weight:600;padding:3px 8px;border-radius:5px;flex-shrink:0;letter-spacing:.5px;text-transform:uppercase;}
+.hist-status.claimed{background:rgba(0,212,170,.1);color:var(--accent);border:1px solid rgba(0,212,170,.15);}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);z-index:200;background:var(--s2);border:1px solid var(--muted2);border-radius:10px;padding:10px 16px;font-family:var(--m);font-size:11px;display:flex;align-items:center;gap:8px;box-shadow:0 8px 32px rgba(0,0,0,.6);transition:transform .4s cubic-bezier(.34,1.56,.64,1),opacity .4s;opacity:0;white-space:nowrap;}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+.toast.ok{border-color:rgba(0,212,170,.25);}.toast.err{border-color:rgba(255,71,87,.25);}
+.td{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.toast.ok .td{background:var(--accent);box-shadow:0 0 6px var(--accent);}
+.toast.err .td{background:var(--red);box-shadow:0 0 6px var(--red);}
+.overlay{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.85);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .3s;}
+.overlay.on{opacity:1;pointer-events:all;}
+.sheet{background:var(--s1);border:1px solid var(--muted2);border-radius:20px;width:100%;max-width:360px;transform:translateY(40px) scale(.98);transition:transform .35s cubic-bezier(.34,1.3,.64,1);overflow:hidden;}
+.overlay.on .sheet{transform:none;}
+.modal-header{padding:20px 20px 14px;text-align:center;border-bottom:1px solid var(--muted2);}
+.modal-title{font-family:var(--d);font-size:18px;font-weight:700;}
+.modal-sub{font-family:var(--m);font-size:10px;color:var(--muted);margin-top:3px;}
+.modal-body{padding:16px 20px;}
+.modal-footer{padding:14px 20px 20px;display:flex;gap:8px;}
+.btn-cancel{flex:1;padding:12px;border-radius:10px;background:var(--s2);border:1px solid var(--muted2);color:var(--txt);font-family:var(--b);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;}
+.btn-cancel:hover{border-color:var(--muted);}
+.copyright-footer{text-align:center;padding:16px 0 8px;border-top:1px solid var(--muted2);margin-top:16px;}
+.copyright-footer span{font-family:var(--m);font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;line-height:1.6;display:block;}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="hdr">
+    <div class="hdr-brand">
+      <div class="hdr-dot">👟</div>
+      <div>
+        <div class="hdr-name">SHOE CLAIM</div>
+        <div class="hdr-sub">STAFF PORTAL · SIZE 361</div>
+        <div class="conn-status"><span class="conn-dot" id="connDot"></span><span id="connText">Connecting...</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="data-loaded" id="dataLoaded">
+    <span class="data-loaded-icon">✅</span>
+    <span class="data-loaded-text" id="dataLoadedText">Connected to database</span>
+  </div>
+  <div class="search-wrap">
+    <div class="search-label">Search by ID or Name</div>
+    <div class="search-row">
+      <input class="inp" id="searchInp" placeholder="Enter ID or Name..." type="text" autocomplete="off"/>
+      <button class="go-btn" id="goBtn">Search</button>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat"><span class="stat-n t" id="sTotal">0</span><span class="stat-lbl">Total Staff</span></div>
+    <div class="stat"><span class="stat-n v" id="sClaimed">0</span><span class="stat-lbl">Claimed</span></div>
+    <div class="stat"><span class="stat-n c" id="sPending">0</span><span class="stat-lbl">Pending</span></div>
+  </div>
+  <div class="not-found" id="notFound">
+    <div class="not-found-icon">❌</div>
+    <div class="not-found-title">ID NOT FOUND</div>
+    <div class="not-found-text" id="notFoundQuery">—</div>
+    <div class="not-found-sub">Please check and try again</div>
+  </div>
+  <div class="result-card" id="resultCard">
+    <div class="result-header">
+      <div class="result-icon">👤</div>
+      <div class="result-title" id="resName">—</div>
+      <div class="result-sub" id="resId">ID: —</div>
+    </div>
+    <div class="result-body">
+      <div class="info-inline">
+        <div class="info-badge"><div class="info-badge-key">Function</div><div class="info-badge-val" id="resFunction">—</div></div>
+        <div class="info-badge"><div class="info-badge-key">Gender</div><div class="info-badge-val" id="resGender">—</div></div>
+      </div>
+      <div class="size-display">
+        <div class="size-label">361 Shoe Size</div>
+        <div class="size-value" id="resSize">—</div>
+        <div class="size-unit">EU Size</div>
+      </div>
+      <button class="claim-btn" id="claimBtn"><span>✓</span> Claim Shoes</button>
+    </div>
+  </div>
+  <div class="history">
+    <div class="hist-hdr">
+      <div class="hist-title"><span class="hist-title-dot"></span>Recent Claims</div>
+      <div class="hist-actions">
+        <button class="xls-btn" id="xlsBtn">⬇ Excel</button>
+      </div>
+    </div>
+    <div id="histBody">
+      <div class="hist-empty"><div class="hist-empty-ico">📋</div><p>NO CLAIMS YET</p></div>
+    </div>
+  </div>
+  <div class="copyright-footer">
+    <span class="copy-brand">© SHOE CLAIM SYSTEM 2026</span>
+    <span>All Rights Reserved</span>
+  </div>
+</div>
+
+<div class="overlay" id="confirmModal">
+  <div class="sheet">
+    <div class="modal-header"><div class="modal-title">Confirm Claim?</div><div class="modal-sub">This action cannot be undone</div></div>
+    <div class="modal-body">
+      <div class="info-badge" style="margin-bottom:10px;"><div class="info-badge-key">Staff</div><div class="info-badge-val" id="confirmName" style="font-size:14px;">—</div></div>
+      <div class="size-display" style="padding:12px;margin:0;"><div class="size-label">Shoe Size</div><div class="size-value" id="confirmSize" style="font-size:36px;">—</div></div>
+    </div>
+    <div class="modal-footer"><button class="btn-cancel" onclick="closeModal()">Cancel</button><button class="claim-btn" onclick="confirmClaim()" style="flex:1.5;">Yes, Claim</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span class="td"></span><span id="toastTxt"></span></div>
+
+<script>
+// ══ FIREBASE CONFIG (from your file) ══
+const firebaseConfig = {
+  apiKey: "AIzaSyAc53UEPP9_bz0W3iBmhghKROPL-FhsQCg",
+  authDomain: "luckydraw-oml.firebaseapp.com",
+  projectId: "luckydraw-oml"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const staffRef = db.collection('shoeStaff');
+const claimsRef = db.collection('shoeClaims');
+
+let staffData = [];
+let currentStaff = null;
+const G = id => document.getElementById(id);
+
+// ══ Load Data from Firestore ══
+staffRef.onSnapshot((snapshot) => {
+  staffData = [];
+  snapshot.forEach((doc) => {
+    staffData.push({ id: doc.id, ...doc.data() });
+  });
+  G('connDot').className = 'conn-dot online';
+  G('connText').textContent = 'Online';
+  G('dataLoaded').classList.add('show');
+  G('dataLoadedText').textContent = `Loaded ${staffData.length} staff`;
+  updateStats();
+}, (err) => {
+  console.error('Error:', err);
+  G('connText').textContent = 'Error';
+});
+
+function updateStats() {
+  G('sTotal').textContent = staffData.length;
+  const claimedCount = staffData.filter(s => s.claimed).length;
+  G('sClaimed').textContent = claimedCount;
+  G('sPending').textContent = 0;
+}
+
+function renderHistory(claims) {
+  if (!claims || claims.length === 0) { 
+    G('histBody').innerHTML = '<div class="hist-empty"><div class="hist-empty-ico">📋</div><p>NO CLAIMS YET</p></div>'; 
+    return; 
+  }
+  const rows = claims.slice(0, 10).map(c => {
+    const time = c.claimedAt ? new Date(c.claimedAt.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-';
+    return `<div class="hist-item"><div class="hist-avatar">${c.name.charAt(0).toUpperCase()}</div><div class="hist-info"><div class="hist-name">${c.name}</div><div class="hist-meta">ID: ${c.staffId || c.id} · ${time}</div></div><div class="hist-size">${c.size || '-'}</div><span class="hist-status claimed">Claimed</span></div>`;
+  }).join('');
+  G('histBody').innerHTML = `<div class="hist-list">${rows}</div>`;
+}
+
+// Load claims
+claimsRef.onSnapshot((snapshot) => {
+  const claims = [];
+  snapshot.forEach((doc) => {
+    claims.push({ id: doc.id, ...doc.data() });
+  });
+  renderHistory(claims);
+});
+
+G('goBtn').addEventListener('click', doSearch);
+G('searchInp').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+
+function doSearch() {
+  const query = G('searchInp').value.trim();
+  const queryLower = query.toLowerCase();
+  G('resultCard').classList.remove('show');
+  G('notFound').classList.remove('show');
+  if (!query) { toast('Please enter ID or Name', 'err'); return; }
+  if (staffData.length === 0) { toast('No data loaded. Please contact admin.', 'err'); return; }
+  const found = staffData.find(s => String(s.id).toLowerCase() === queryLower || s.name.toLowerCase().includes(queryLower));
+  if (found) { showResult(found); }
+  else { G('notFoundQuery').textContent = `"${query}"`; G('notFound').classList.add('show'); toast('Staff not found', 'err'); }
+}
+
+function showResult(staff) {
+  currentStaff = staff;
+  G('resName').textContent = staff.name;
+  G('resId').textContent = `ID: ${staff.id}`;
+  G('resFunction').textContent = staff.function || '—';
+  G('resGender').textContent = staff.gender || '—';
+  G('resSize').textContent = staff.size || '—';
+  const btn = G('claimBtn');
+  if (staff.claimed) { btn.innerHTML = '<span>✓</span> Already Claimed'; btn.classList.add('claimed'); btn.disabled = true; }
+  else { btn.innerHTML = '<span>✓</span> Claim Shoes'; btn.classList.remove('claimed'); btn.disabled = false; }
+  G('resultCard').classList.add('show');
+}
+
+G('claimBtn').addEventListener('click', () => {
+  if (!currentStaff) return;
+  G('confirmName').textContent = currentStaff.name;
+  G('confirmSize').textContent = currentStaff.size || '—';
+  openModal('confirmModal');
+});
+
+function confirmClaim() {
+  if (!currentStaff) return;
+  closeModal();
+  const claim = { staffId: currentStaff.id, name: currentStaff.name, function: currentStaff.function, gender: currentStaff.gender, size: currentStaff.size, claimedAt: firebase.firestore.FieldValue.serverTimestamp() };
+  // Save claim to Firestore
+  claimsRef.add(claim).then(() => {
+    // Update staff as claimed
+    staffRef.doc(currentStaff.id).update({ claimed: true, claimedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    showResult({...currentStaff, claimed: true});
+    toast('Shoes claimed successfully!', 'ok');
+  });
+}
+
+G('xlsBtn').addEventListener('click', () => {
+  claimsRef.get().then((snapshot) => {
+    const claims = [];
+    snapshot.forEach((doc) => { claims.push(doc.data()); });
+    if (claims.length === 0) { toast('No claims to export', 'err'); return; }
+    const rows = claims.map((c, i) => ({'#': i + 1,'ID': c.staffId || c.id,'Name': c.name,'Function': c.function || '','Gender': c.gender || '','Size 361': c.size || '','Date': c.claimedAt ? new Date(c.claimedAt.toDate()).toLocaleDateString() : ''}));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [{wch:5},{wch:12},{wch:20},{wch:12},{wch:8},{wch:10},{wch:12}];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Claims');
+    const now = new Date();
+    const stamp = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+    XLSX.writeFile(wb, `shoe_claims_${stamp}.xlsx`);
+    toast('Excel downloaded!', 'ok');
+  });
+});
+
+function openModal(id) { G(id).classList.add('on'); }
+function closeModal() { G('confirmModal').classList.remove('on'); }
+G('confirmModal').addEventListener('click', e => { if (e.target === G('confirmModal')) closeModal(); });
+
+let toastT = null;
+function toast(msg, type = 'ok') {
+  const el = G('toast');
+  G('toastTxt').textContent = msg;
+  el.className = 'toast ' + type;
+  void el.offsetWidth;
+  el.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => el.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>

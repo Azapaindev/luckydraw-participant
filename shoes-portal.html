@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5">
+    <title>Shoe Claim Portal - Staff</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; -webkit-text-size-adjust: 100%; }
+        
+        :root {
+            --primary: #2563EB;
+            --primary-dark: #1E40AF;
+            --accent: #10B981;
+            --accent-light: #D1FAE5;
+            --danger: #EF4444;
+            --danger-light: #FEE2E2;
+            --warning: #F59E0B;
+            --warning-light: #FEF3C7;
+            --bg: #F9FAFB;
+            --card: #FFFFFF;
+            --border: #E5E7EB;
+            --text: #1F2937;
+            --text-secondary: #6B7280;
+            --text-muted: #9CA3AF;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
+            --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100vh;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+        
+        .container { max-width: 480px; margin: 0 auto; height: 100vh; display: flex; flex-direction: column; width: 100%; }
+        
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 16px 20px;
+            box-shadow: var(--shadow-md);
+            flex-shrink: 0;
+        }
+        
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .header-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        .header-subtitle {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 2px;
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .status-badge.online::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: #10B981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        
+        /* Main Content */
+        .main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .section {
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+        
+        /* Search Input */
+        .search-box {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 12px 14px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
+            background: var(--card);
+            transition: all 0.2s;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        
+        .btn-search {
+            padding: 12px 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            -webkit-appearance: none;
+            appearance: none;
+            min-width: 50px;
+            touch-action: manipulation;
+        }
+        
+        .btn-search:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-search:hover {
+            background: var(--primary-dark);
+            box-shadow: var(--shadow-md);
+        }
+        
+        /* Info Card */
+        .info-card {
+            background: var(--card);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .info-field {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .info-field:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        
+        .info-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text);
+        }
+        
+        .size-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--accent) 0%, #059669 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        
+        .size-badge.large {
+            background: linear-gradient(135deg, var(--warning) 0%, #D97706 100%);
+        }
+        
+        /* Claim Button */
+        .btn-claim {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--accent) 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 12px;
+            -webkit-appearance: none;
+            appearance: none;
+            touch-action: manipulation;
+        }
+        
+        .btn-claim:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+        
+        .btn-claim:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .btn-claim:disabled {
+            background: var(--text-muted);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+        
+        .empty-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+        
+        .empty-text {
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        /* Status Messages */
+        .success-msg {
+            background: var(--accent-light);
+            color: #047857;
+            padding: 12px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 12px;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .error-msg {
+            background: var(--danger-light);
+            color: #991B1B;
+            padding: 12px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 12px;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .info-msg {
+            background: var(--warning-light);
+            color: #92400E;
+            padding: 12px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 12px;
+            animation: slideIn 0.3s ease;
+        }
+        
+        /* Bottom Navigation */
+        .bottom-nav {
+            display: flex;
+            gap: 8px;
+            padding: 12px;
+            background: var(--card);
+            border-top: 1px solid var(--border);
+            box-shadow: 0 -4px 6px rgba(0,0,0,0.05);
+            flex-shrink: 0;
+            flex-wrap: wrap;
+        }
+        
+        .nav-btn {
+            flex: 1;
+            min-width: 60px;
+            padding: 10px 8px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            -webkit-appearance: none;
+            appearance: none;
+            touch-action: manipulation;
+        }
+        
+        .nav-btn:active {
+            transform: scale(0.96);
+        }
+        
+        .nav-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        /* Modals */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            animation: fadeIn 0.2s ease;
+        }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        .modal.show { display: flex; align-items: flex-end; }
+        
+        .modal-content {
+            background: var(--card);
+            width: 100%;
+            max-height: 80vh;
+            border-radius: 16px 16px 0 0;
+            padding: 24px;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        
+        .modal-header {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+        
+        .btn-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        
+        /* History */
+        .history-item {
+            background: var(--bg);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid var(--accent);
+        }
+        
+        .history-item.error {
+            border-left-color: var(--danger);
+            background: var(--danger-light);
+        }
+        
+        .history-info {
+            flex: 1;
+        }
+        
+        .history-name {
+            font-weight: 600;
+            font-size: 13px;
+        }
+        
+        .history-time {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+        
+        .history-status {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #047857;
+        }
+        
+        .history-item.error .history-status {
+            color: #991B1B;
+        }
+        
+        /* Offline Indicator */
+        .offline-banner {
+            display: none;
+            background: var(--warning-light);
+            color: #92400E;
+            padding: 10px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .offline-banner.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-banner" id="offlineBanner">
+        📡 Offline Mode - Changes saved locally and will sync when online
+    </div>
+    
+    <div class="container">
+        <div class="header">
+            <div class="header-top">
+                <div>
+                    <div class="header-title">Shoe Claim</div>
+                    <div class="header-subtitle">Staff Portal</div>
+                </div>
+                <div class="status-badge online" id="statusBadge">
+                    Online
+                </div>
+            </div>
+        </div>
+        
+        <div class="main" id="mainContent">
+            <!-- Search Section -->
+            <div class="section">
+                <div class="section-title">Search</div>
+                <div class="search-box">
+                    <input type="text" id="searchInput" class="search-input" placeholder="ID or Name..." autocomplete="off">
+                    <button class="btn-search" onclick="searchStaff()">Go</button>
+                </div>
+            </div>
+            
+            <!-- Results -->
+            <div id="resultsContainer"></div>
+            
+            <!-- Recent Claims -->
+            <div class="section" id="recentSection" style="display:none;">
+                <div class="section-title">Recent Claims</div>
+                <div id="historyContainer"></div>
+            </div>
+        </div>
+        
+        <div class="bottom-nav">
+            <button class="nav-btn" onclick="showQRScanner()">📱 QR</button>
+            <button class="nav-btn" onclick="showHistory()">📋 History</button>
+            <button class="nav-btn" onclick="downloadData()">⬇️ Download</button>
+            <button class="nav-btn" onclick="showSettings()">⚙️ Settings</button>
+        </div>
+    </div>
+    
+    <!-- QR Scanner Modal -->
+    <div class="modal" id="qrModal">
+        <div class="modal-content" style="max-height: 100vh;">
+            <button class="btn-close" onclick="closeModal('qrModal')">✕</button>
+            <div class="modal-header">Scan or Enter ID</div>
+            <div id="reader" style="width: 100%; margin-bottom: 16px;"></div>
+            <div class="search-box">
+                <input type="text" id="manualInput" class="search-input" placeholder="Or enter manually..." autocomplete="off">
+                <button class="btn-search" onclick="scanManual()">Go</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- History Modal -->
+    <div class="modal" id="historyModal">
+        <div class="modal-content">
+            <button class="btn-close" onclick="closeModal('historyModal')">✕</button>
+            <div class="modal-header">Claim History</div>
+            <div id="fullHistoryContainer"></div>
+            <button class="nav-btn" style="margin-top: 16px; width: 100%; background: var(--danger-light); color: var(--danger); border-color: var(--danger);" onclick="clearHistory()">Clear History</button>
+        </div>
+    </div>
+    
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <button class="btn-close" onclick="closeModal('settingsModal')">✕</button>
+            <div class="modal-header">Settings</div>
+            <div style="margin-top: 16px;">
+                <div style="margin-bottom: 16px;">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                        <input type="checkbox" id="notifyToggle" style="width: 18px; height: 18px; cursor: pointer;">
+                        <span style="font-size: 14px;">Enable Notifications</span>
+                    </label>
+                </div>
+                <div style="padding: 12px; background: var(--bg); border-radius: 8px; font-size: 12px; color: var(--text-secondary);">
+                    Version 2.0 | Staff Portal<br>
+                    Mobile Optimized
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DB_KEY = 'shoeClaimDB';
+        
+        let db = {
+            staff: [],
+            claims: []
+        };
+        
+        let qrScanner = null;
+        
+        // Initialize
+        function init() {
+            loadData();
+            setupEventListeners();
+            updateStatus();
+            window.addEventListener('online', () => updateStatus());
+            window.addEventListener('offline', () => updateStatus());
+        }
+        
+        function loadData() {
+            const stored = localStorage.getItem(DB_KEY);
+            if (stored) {
+                db = JSON.parse(stored);
+            } else {
+                db.staff = [
+                    { id: 73, name: 'Moeu Ass Ary', function: 'SAL', size: 42, claimed: false },
+                    { id: 244, name: 'Meas Thong', function: 'EXE', size: 42, claimed: false },
+                    { id: 330, name: 'Mith Vandeth', function: 'SAL', size: 43.5, claimed: false },
+                    { id: 341, name: 'Sous Savuth', function: 'SAL', size: 42, claimed: false }
+                ];
+                saveData();
+            }
+        }
+        
+        function saveData() {
+            localStorage.setItem(DB_KEY, JSON.stringify(db));
+        }
+        
+        function setupEventListeners() {
+            document.getElementById('searchInput').addEventListener('keypress', e => {
+                if (e.key === 'Enter') searchStaff();
+            });
+            document.getElementById('manualInput').addEventListener('keypress', e => {
+                if (e.key === 'Enter') scanManual();
+            });
+        }
+        
+        // Search & Display
+        function searchStaff() {
+            const query = document.getElementById('searchInput').value.trim().toLowerCase();
+            if (!query) return;
+            
+            const result = db.staff.find(s => 
+                String(s.id) === query || s.name.toLowerCase().includes(query)
+            );
+            
+            if (result) {
+                displayResult(result);
+            } else {
+                showNotFound(query);
+            }
+        }
+        
+        function showNotFound(query) {
+            const resultHtml = `
+                <div class="section">
+                    <div class="error-msg">✕ Staff member not found</div>
+                    <div class="info-card">
+                        <div style="text-align: center; padding: 12px 0;">
+                            <div style="font-size: 14px; color: var(--text-secondary); margin-bottom: 12px;">
+                                Could not find: <strong>"${query}"</strong>
+                            </div>
+                            <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.6; text-align: left;">
+                                <strong>💡 Suggestions:</strong><br>
+                                ✓ Check spelling carefully<br>
+                                ✓ Try ID number instead<br>
+                                ✓ Verify data was imported<br>
+                                ✓ Contact admin if issue
+                            </div>
+                        </div>
+                    </div>
+                    <button class="nav-btn" style="width: 100%; background: var(--bg);" onclick="clearResults()">Try Again</button>
+                </div>
+            `;
+            document.getElementById('resultsContainer').innerHTML = resultHtml;
+        }
+        
+        function displayResult(staff) {
+            const sizeClass = staff.size > 43 ? 'large' : '';
+            const claimed = staff.claimed ? 'Already claimed ✓' : 'Ready to claim';
+            const claimedClass = staff.claimed ? ' disabled' : '';
+            
+            const html = `
+                <div class="section">
+                    <div class="success-msg">✓ Staff member found!</div>
+                    <div class="info-card">
+                        <div class="info-field">
+                            <span class="info-label">ID</span>
+                            <span class="info-value">${staff.id}</span>
+                        </div>
+                        <div class="info-field">
+                            <span class="info-label">Name</span>
+                            <span class="info-value">${staff.name}</span>
+                        </div>
+                        <div class="info-field">
+                            <span class="info-label">Function</span>
+                            <span class="info-value">${staff.function}</span>
+                        </div>
+                        <div class="info-field">
+                            <span class="info-label">Shoe Size (361)</span>
+                            <span class="info-value">
+                                <span class="size-badge ${sizeClass}">${staff.size}</span>
+                            </span>
+                        </div>
+                        <div class="info-field" style="border-bottom: none;">
+                            <span class="info-label">Status</span>
+                            <span class="info-value" style="color: ${staff.claimed ? '#991B1B' : '#047857'}">${claimed}</span>
+                        </div>
+                    </div>
+                    <button class="btn-claim${claimedClass}" onclick="claimShoes(${staff.id})"${staff.claimed ? ' disabled' : ''}>
+                        ${staff.claimed ? '✓ Already Claimed' : '🎁 Claim Shoes'}
+                    </button>
+                    <button class="nav-btn" style="width: 100%; background: var(--bg);" onclick="clearResults()">Clear</button>
+                </div>
+            `;
+            
+            document.getElementById('resultsContainer').innerHTML = html;
+        }
+        
+        function clearResults() {
+            document.getElementById('resultsContainer').innerHTML = '';
+            document.getElementById('searchInput').value = '';
+        }
+        
+        function claimShoes(staffId) {
+            const staff = db.staff.find(s => s.id === staffId);
+            if (!staff) return;
+            
+            staff.claimed = true;
+            db.claims.push({
+                staffId: staff.id,
+                name: staff.name,
+                timestamp: new Date().toISOString(),
+                size: staff.size
+            });
+            
+            saveData();
+            
+            const resultHtml = document.getElementById('resultsContainer').innerHTML;
+            document.getElementById('resultsContainer').innerHTML = 
+                '<div class="section"><div class="success-msg">🎉 Shoes claimed successfully! Thank you!</div></div>' +
+                resultHtml;
+            
+            setTimeout(() => {
+                clearResults();
+                updateHistory();
+            }, 2000);
+        }
+        
+        // QR Scanner
+        function showQRScanner() {
+            document.getElementById('qrModal').classList.add('show');
+            
+            if (!qrScanner) {
+                try {
+                    qrScanner = new Html5Qrcode('reader');
+                    qrScanner.start(
+                        { facingMode: 'environment' },
+                        { fps: 10, qrbox: 250 },
+                        onQRScanned,
+                        err => console.log('QR error:', err)
+                    );
+                } catch (e) {
+                    document.getElementById('reader').innerHTML = 
+                        '<div style="padding: 40px; text-align: center; color: var(--text-secondary);">' +
+                        'QR Scanner not available<br><small>Use manual entry below</small></div>';
+                }
+            }
+        }
+        
+        function onQRScanned(decodedText) {
+            document.getElementById('manualInput').value = decodedText;
+            if (qrScanner) qrScanner.stop();
+            scanManual();
+        }
+        
+        function scanManual() {
+            const value = document.getElementById('manualInput').value.trim().toLowerCase();
+            closeModal('qrModal');
+            document.getElementById('searchInput').value = value;
+            searchStaff();
+        }
+        
+        // History & Export
+        function updateHistory() {
+            document.getElementById('recentSection').style.display = 'block';
+            const container = document.getElementById('historyContainer');
+            const recent = db.claims.slice(0, 3);
+            
+            if (recent.length === 0) {
+                container.innerHTML = '<div class="empty-state" style="padding: 20px;"><div class="empty-icon">📭</div><div class="empty-text">No claims yet</div></div>';
+                return;
+            }
+            
+            container.innerHTML = recent.map(claim => {
+                const time = new Date(claim.timestamp).toLocaleTimeString();
+                return `
+                    <div class="history-item">
+                        <div class="history-info">
+                            <div class="history-name">${claim.name}</div>
+                            <div class="history-time">${time}</div>
+                        </div>
+                        <div class="history-status">✓ Size ${claim.size}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function showHistory() {
+            document.getElementById('historyModal').classList.add('show');
+            const container = document.getElementById('fullHistoryContainer');
+            
+            if (db.claims.length === 0) {
+                container.innerHTML = '<div class="empty-state" style="padding: 40px;"><div class="empty-icon">📭</div><div class="empty-text">No claims recorded</div></div>';
+                return;
+            }
+            
+            container.innerHTML = db.claims.map(claim => {
+                const date = new Date(claim.timestamp);
+                const dateStr = date.toLocaleDateString();
+                const timeStr = date.toLocaleTimeString();
+                return `
+                    <div class="history-item">
+                        <div class="history-info">
+                            <div class="history-name">${claim.name} (ID: ${claim.staffId})</div>
+                            <div class="history-time">${dateStr} ${timeStr}</div>
+                        </div>
+                        <div class="history-status">Size ${claim.size}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function downloadData() {
+            if (db.claims.length === 0) {
+                alert('❌ No claims to download');
+                return;
+            }
+            
+            const rows = db.claims.map((claim, idx) => ({
+                '#': idx + 1,
+                'ID': claim.staffId,
+                'Name': claim.name,
+                'Size': claim.size,
+                'Date': new Date(claim.timestamp).toLocaleDateString(),
+                'Time': new Date(claim.timestamp).toLocaleTimeString()
+            }));
+            
+            const ws = XLSX.utils.json_to_sheet(rows);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Claims');
+            
+            const timestamp = new Date().toISOString().slice(0, 10);
+            XLSX.writeFile(wb, `shoe-claims-${timestamp}.xlsx`);
+        }
+        
+        function clearHistory() {
+            if (confirm('⚠️ Clear all history? Cannot be undone.')) {
+                db.claims = [];
+                saveData();
+                closeModal('historyModal');
+                clearResults();
+            }
+        }
+        
+        // Modal & UI
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('show');
+            if (qrScanner && id === 'qrModal') {
+                qrScanner.stop().catch(() => {});
+                qrScanner = null;
+            }
+        }
+        
+        function showSettings() {
+            document.getElementById('settingsModal').classList.add('show');
+        }
+        
+        function updateStatus() {
+            const online = navigator.onLine;
+            const badge = document.getElementById('statusBadge');
+            const banner = document.getElementById('offlineBanner');
+            
+            if (online) {
+                badge.textContent = 'Online';
+                banner.classList.remove('show');
+            } else {
+                badge.textContent = 'Offline';
+                badge.classList.remove('online');
+                banner.classList.add('show');
+            }
+        }
+        
+        // Close modal on backdrop click
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', e => {
+                if (e.target === modal) {
+                    modal.classList.remove('show');
+                }
+            });
+        });
+        
+        // Initialize app
+        init();
+        updateHistory();
+    </script>
+</body>
+</html>

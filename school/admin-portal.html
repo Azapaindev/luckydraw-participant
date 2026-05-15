@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DuonHoa CMS — Admin Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red: #C0392B;
+      --red-dark: #96281B;
+      --red-light: #f9ecea;
+      --gold: #D4AF37;
+      --ink: #1a1a2e;
+      --ink-soft: #3d3d5c;
+      --muted: #8888aa;
+      --border: #e2e2ef;
+      --surface: #ffffff;
+      --bg: #f5f5fb;
+      --sidebar: #1a1a2e;
+      --sidebar-text: #c8c8e8;
+      --sidebar-active: #C0392B;
+      --radius: 10px;
+      --shadow: 0 2px 16px rgba(26,26,46,0.07);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ── */
+    aside {
+      width: 240px;
+      min-width: 240px;
+      background: var(--sidebar);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .sidebar-brand {
+      padding: 28px 24px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .sidebar-brand h1 {
+      font-family: 'Playfair Display', serif;
+      color: #fff;
+      font-size: 18px;
+      line-height: 1.2;
+    }
+    .sidebar-brand span {
+      font-size: 11px;
+      color: var(--gold);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    nav { flex: 1; padding: 16px 0; }
+    .nav-section {
+      padding: 8px 24px 4px;
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.3);
+      font-weight: 600;
+    }
+    nav a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 24px;
+      color: var(--sidebar-text);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 400;
+      transition: all 0.18s;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+    }
+    nav a:hover { color: #fff; background: rgba(255,255,255,0.05); }
+    nav a.active {
+      color: #fff;
+      background: rgba(192,57,43,0.18);
+      border-left-color: var(--red);
+      font-weight: 600;
+    }
+    nav a .icon { font-size: 16px; width: 20px; text-align: center; }
+
+    .sidebar-footer {
+      padding: 16px 24px;
+      border-top: 1px solid rgba(255,255,255,0.07);
+    }
+    .save-all-btn {
+      width: 100%;
+      background: var(--red);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      padding: 11px 0;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.18s;
+      letter-spacing: 0.3px;
+    }
+    .save-all-btn:hover { background: var(--red-dark); }
+
+    /* ── Main ── */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    header h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      color: var(--ink);
+    }
+    .header-actions { display: flex; gap: 10px; align-items: center; }
+    .tag-saved {
+      font-size: 12px;
+      color: #27ae60;
+      background: #eafaf1;
+      border: 1px solid #a9dfbf;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-weight: 600;
+      display: none;
+    }
+    .tag-saved.show { display: inline-block; }
+
+    .content-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px;
+    }
+
+    /* ── Panels ── */
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 28px 32px;
+      margin-bottom: 24px;
+    }
+    .card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 16px;
+      color: var(--ink);
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-title .badge {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      background: var(--red-light);
+      color: var(--red);
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+
+    /* ── Form Elements ── */
+    .field { margin-bottom: 18px; }
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 6px;
+    }
+    .field input[type="text"],
+    .field input[type="email"],
+    .field input[type="tel"],
+    .field input[type="url"],
+    .field textarea,
+    .field select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      color: var(--ink);
+      background: var(--surface);
+      transition: border-color 0.18s;
+      outline: none;
+    }
+    .field input:focus,
+    .field textarea:focus,
+    .field select:focus { border-color: var(--red); }
+    .field textarea { resize: vertical; min-height: 90px; }
+
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .field-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+    /* ── Repeater ── */
+    .repeater-item {
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      margin-bottom: 12px;
+      position: relative;
+      background: var(--bg);
+      transition: border-color 0.18s;
+    }
+    .repeater-item:hover { border-color: #c8c8e0; }
+    .repeater-item .item-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .repeater-item .item-num {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--red);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .remove-btn {
+      background: none;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 12px;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+    .remove-btn:hover { border-color: var(--red); color: var(--red); background: var(--red-light); }
+
+    .add-btn {
+      border: 2px dashed var(--border);
+      background: none;
+      border-radius: var(--radius);
+      width: 100%;
+      padding: 12px;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s;
+      margin-top: 4px;
+    }
+    .add-btn:hover { border-color: var(--red); color: var(--red); background: var(--red-light); }
+
+    /* ── Color picker field ── */
+    .color-field { display: flex; align-items: center; gap: 10px; }
+    .color-field input[type="color"] {
+      width: 40px; height: 36px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 2px;
+      cursor: pointer;
+    }
+    .color-field input[type="text"] { flex: 1; }
+
+    /* ── Toggle ── */
+    .toggle-field { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+    .toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0;
+      background: var(--border);
+      border-radius: 24px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle-slider:before {
+      content: '';
+      position: absolute;
+      width: 18px; height: 18px;
+      left: 3px; top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    .toggle input:checked + .toggle-slider { background: var(--red); }
+    .toggle input:checked + .toggle-slider:before { transform: translateX(20px); }
+    .toggle-label { font-size: 14px; color: var(--ink-soft); font-weight: 500; }
+
+    /* ── Dashboard grid ── */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 24px;
+      box-shadow: var(--shadow);
+    }
+    .stat-card .stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: 600; margin-bottom: 8px; }
+    .stat-card .stat-num { font-family: 'Playfair Display', serif; font-size: 28px; color: var(--ink); }
+    .stat-card .stat-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+    /* ── Preview bar ── */
+    .preview-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--red);
+      background: var(--red-light);
+      border: 1px solid #f0c4be;
+      border-radius: 8px;
+      padding: 6px 14px;
+      text-decoration: none;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+    .preview-link:hover { background: #fce0db; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 28px; right: 28px;
+      background: var(--ink);
+      color: white;
+      padding: 14px 22px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+      transform: translateY(20px);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(.4,0,.2,1);
+      z-index: 9999;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+
+    /* ── Image upload ── */
+    .image-upload {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.18s;
+      position: relative;
+    }
+    .image-upload:hover { border-color: var(--red); background: var(--red-light); }
+    .image-upload input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .image-upload p { color: var(--muted); font-size: 13px; margin-top: 6px; }
+    .image-upload .upload-icon { font-size: 28px; }
+    .image-preview { max-width: 200px; max-height: 120px; border-radius: 8px; margin-top: 10px; object-fit: cover; display: none; }
+
+    hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+  </style>
+</head>
+<body>
+
+<aside>
+  <div class="sidebar-brand">
+    <h1>DuonHoa</h1>
+    <span>Content Manager</span>
+  </div>
+  <nav>
+    <div class="nav-section">Overview</div>
+    <a class="active" onclick="showPanel('dashboard')">
+      <span class="icon">📊</span> Dashboard
+    </a>
+
+    <div class="nav-section">Website Content</div>
+    <a onclick="showPanel('general')">
+      <span class="icon">⚙️</span> General Info
+    </a>
+    <a onclick="showPanel('hero')">
+      <span class="icon">🏠</span> Hero Section
+    </a>
+    <a onclick="showPanel('programs')">
+      <span class="icon">📚</span> Programs
+    </a>
+    <a onclick="showPanel('features')">
+      <span class="icon">✨</span> Why Choose Us
+    </a>
+    <a onclick="showPanel('news')">
+      <span class="icon">📰</span> News & Events
+    </a>
+    <a onclick="showPanel('testimonials')">
+      <span class="icon">💬</span> Testimonials
+    </a>
+    <a onclick="showPanel('contact')">
+      <span class="icon">📍</span> Contact & Footer
+    </a>
+
+    <div class="nav-section">Appearance</div>
+    <a onclick="showPanel('branding')">
+      <span class="icon">🎨</span> Branding & Colors
+    </a>
+    <a onclick="showPanel('navigation')">
+      <span class="icon">🔗</span> Navigation Links
+    </a>
+
+    <div class="nav-section">Settings</div>
+    <a onclick="showPanel('seo')">
+      <span class="icon">🔍</span> SEO & Meta
+    </a>
+    <a onclick="showPanel('export')">
+      <span class="icon">📤</span> Export / Publish
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="save-all-btn" onclick="saveAll()">💾 Save All Changes</button>
+  </div>
+</aside>
+
+<main>
+  <header>
+    <h2 id="panel-title">Dashboard</h2>
+    <div class="header-actions">
+      <span class="tag-saved" id="saved-tag">✓ Saved</span>
+      <a class="preview-link" onclick="previewSite()">👁 Preview Site</a>
+    </div>
+  </header>
+
+  <div class="content-area">
+
+    <!-- ── DASHBOARD ── -->
+    <div class="panel active" id="panel-dashboard">
+      <div class="dashboard-grid">
+        <div class="stat-card">
+          <div class="stat-label">Programs Listed</div>
+          <div class="stat-num" id="stat-programs">4</div>
+          <div class="stat-sub">Preschool → High School</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">News Articles</div>
+          <div class="stat-num" id="stat-news">3</div>
+          <div class="stat-sub">Visible on homepage</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Testimonials</div>
+          <div class="stat-num" id="stat-testimonials">1</div>
+          <div class="stat-sub">Student/parent quotes</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Languages</div>
+          <div class="stat-num">3</div>
+          <div class="stat-sub">EN · 中文 · ភ្នំពេញ</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">👋 Welcome to the Content Manager</div>
+        <p style="color:var(--ink-soft);line-height:1.7;font-size:14px;">
+          Use the left sidebar to navigate between sections. All changes are saved locally and can be exported to update your website. Click <strong>Save All Changes</strong> at any time to persist your edits.<br><br>
+          <strong>Quick tips:</strong><br>
+          • Edit text fields and click Save to update<br>
+          • Use the <em>Export / Publish</em> panel to download your updated content as JSON<br>
+          • Each section maps directly to a part of your DuonHoa website
+        </p>
+      </div>
+    </div>
+
+    <!-- ── GENERAL ── -->
+    <div class="panel" id="panel-general">
+      <div class="card">
+        <div class="card-title">🏫 School Identity</div>
+        <div class="field-row">
+          <div class="field">
+            <label>School Name</label>
+            <input type="text" id="school-name" value="DuonHoa">
+          </div>
+          <div class="field">
+            <label>Tagline / Subtitle</label>
+            <input type="text" id="school-tagline" value="Chinese International School">
+          </div>
+        </div>
+        <div class="field">
+          <label>School Description (Footer / About)</label>
+          <textarea id="school-desc">Building future leaders with Chinese and international education excellence in Phnom Penh, Cambodia.</textarea>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">🌐 Languages Available <span class="badge">Multilingual</span></div>
+        <div class="field-row-3">
+          <div class="field">
+            <label>Language 1</label>
+            <input type="text" value="English">
+          </div>
+          <div class="field">
+            <label>Language 2</label>
+            <input type="text" value="中文">
+          </div>
+          <div class="field">
+            <label>Language 3</label>
+            <input type="text" value="ភាសាខ្មែរ">
+          </div>
+        </div>
+        <div class="toggle-field">
+          <label class="toggle">
+            <input type="checkbox" checked>
+            <span class="toggle-slider"></span>
+          </label>
+          <span class="toggle-label">Show language switcher in header</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── HERO ── -->
+    <div class="panel" id="panel-hero">
+      <div class="card">
+        <div class="card-title">🏠 Hero Banner Content</div>
+        <div class="field">
+          <label>Hero Main Heading</label>
+          <input type="text" id="hero-heading" value="Welcome to Excellence">
+        </div>
+        <div class="field">
+          <label>Hero Sub-heading Line 1</label>
+          <input type="text" id="hero-sub1" value="Building Future Leaders">
+        </div>
+        <div class="field">
+          <label>Hero Sub-heading Line 2</label>
+          <input type="text" id="hero-sub2" value="With Chinese and International Education">
+        </div>
+        <div class="field">
+          <label>Hero Tagline (smaller text)</label>
+          <input type="text" id="hero-tag" value="From Preschool to High School in Phnom Penh">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Primary CTA Button Text</label>
+            <input type="text" value="Enroll Now">
+          </div>
+          <div class="field">
+            <label>Primary CTA Link / URL</label>
+            <input type="url" value="/admissions">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Secondary CTA Button Text</label>
+            <input type="text" value="Learn More">
+          </div>
+          <div class="field">
+            <label>Secondary CTA Link / URL</label>
+            <input type="url" value="/about">
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">🖼 Hero Background Image</div>
+        <div class="image-upload" onclick="triggerUpload(this)">
+          <input type="file" accept="image/*" onchange="previewImage(this)">
+          <div class="upload-icon">🖼</div>
+          <strong style="font-size:14px;color:var(--ink-soft)">Click to upload hero image</strong>
+          <p>JPG, PNG or WebP · Recommended: 1920×1080px</p>
+          <img class="image-preview" alt="">
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PROGRAMS ── -->
+    <div class="panel" id="panel-programs">
+      <div class="card">
+        <div class="card-title">📚 Academic Programs <span class="badge" id="programs-count">4 items</span></div>
+        <div id="programs-list"></div>
+        <button class="add-btn" onclick="addProgram()">+ Add Program</button>
+      </div>
+    </div>
+
+    <!-- ── FEATURES ── -->
+    <div class="panel" id="panel-features">
+      <div class="card">
+        <div class="card-title">✨ Why Choose Us — Features <span class="badge" id="features-count">6 items</span></div>
+        <div id="features-list"></div>
+        <button class="add-btn" onclick="addFeature()">+ Add Feature</button>
+      </div>
+    </div>
+
+    <!-- ── NEWS ── -->
+    <div class="panel" id="panel-news">
+      <div class="card">
+        <div class="card-title">📰 News & Events <span class="badge" id="news-count">3 items</span></div>
+        <div id="news-list"></div>
+        <button class="add-btn" onclick="addNews()">+ Add Article</button>
+      </div>
+    </div>
+
+    <!-- ── TESTIMONIALS ── -->
+    <div class="panel" id="panel-testimonials">
+      <div class="card">
+        <div class="card-title">💬 Testimonials <span class="badge" id="testimonials-count">1 item</span></div>
+        <div id="testimonials-list"></div>
+        <button class="add-btn" onclick="addTestimonial()">+ Add Testimonial</button>
+      </div>
+    </div>
+
+    <!-- ── CONTACT ── -->
+    <div class="panel" id="panel-contact">
+      <div class="card">
+        <div class="card-title">📍 Contact Information</div>
+        <div class="field">
+          <label>Street Address</label>
+          <input type="text" id="contact-address" value="123 Education Street, Phnom Penh, Cambodia">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Phone Number</label>
+            <input type="tel" id="contact-phone" value="+855 12 345 678">
+          </div>
+          <div class="field">
+            <label>Email Address</label>
+            <input type="email" id="contact-email" value="info@duonhoa.edu.kh">
+          </div>
+        </div>
+        <div class="field">
+          <label>Google Maps Embed URL</label>
+          <input type="url" placeholder="Paste Google Maps embed src URL...">
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">🕐 Office Hours</div>
+        <div class="field-row">
+          <div class="field">
+            <label>Weekday Hours</label>
+            <input type="text" id="hours-weekday" value="Mon - Fri: 7:30 AM - 5:00 PM">
+          </div>
+          <div class="field">
+            <label>Saturday Hours</label>
+            <input type="text" id="hours-sat" value="Sat: 8:00 AM - 12:00 PM">
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔗 Footer Quick Links</div>
+        <div id="footer-links-list"></div>
+        <button class="add-btn" onclick="addFooterLink()">+ Add Link</button>
+      </div>
+      <div class="card">
+        <div class="card-title">📱 Social Media</div>
+        <div class="field-row">
+          <div class="field">
+            <label>Facebook URL</label>
+            <input type="url" placeholder="https://facebook.com/duonhoa">
+          </div>
+          <div class="field">
+            <label>Instagram URL</label>
+            <input type="url" placeholder="https://instagram.com/duonhoa">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>YouTube URL</label>
+            <input type="url" placeholder="https://youtube.com/@duonhoa">
+          </div>
+          <div class="field">
+            <label>WeChat ID</label>
+            <input type="text" placeholder="duonhoa_school">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── BRANDING ── -->
+    <div class="panel" id="panel-branding">
+      <div class="card">
+        <div class="card-title">🎨 Color Scheme</div>
+        <div class="field-row">
+          <div class="field">
+            <label>Primary Color (Red)</label>
+            <div class="color-field">
+              <input type="color" value="#C0392B" oninput="syncColor(this,'primary-hex')">
+              <input type="text" id="primary-hex" value="#C0392B">
+            </div>
+          </div>
+          <div class="field">
+            <label>Accent Color (Gold)</label>
+            <div class="color-field">
+              <input type="color" value="#D4AF37" oninput="syncColor(this,'accent-hex')">
+              <input type="text" id="accent-hex" value="#D4AF37">
+            </div>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Background Color</label>
+            <div class="color-field">
+              <input type="color" value="#ffffff" oninput="syncColor(this,'bg-hex')">
+              <input type="text" id="bg-hex" value="#ffffff">
+            </div>
+          </div>
+          <div class="field">
+            <label>Text / Heading Color</label>
+            <div class="color-field">
+              <input type="color" value="#1a1a2e" oninput="syncColor(this,'text-hex')">
+              <input type="text" id="text-hex" value="#1a1a2e">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">🖼 Logo</div>
+        <div class="image-upload" onclick="triggerUpload(this)">
+          <input type="file" accept="image/*" onchange="previewImage(this)">
+          <div class="upload-icon">🏫</div>
+          <strong style="font-size:14px;color:var(--ink-soft)">Click to upload school logo</strong>
+          <p>PNG with transparency recommended · Max 2MB</p>
+          <img class="image-preview" alt="">
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">🔤 Typography</div>
+        <div class="field-row">
+          <div class="field">
+            <label>Heading Font</label>
+            <select>
+              <option>Playfair Display</option>
+              <option>Merriweather</option>
+              <option>Lora</option>
+              <option>DM Serif Display</option>
+              <option>Cormorant Garamond</option>
+              <option>Noto Serif</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Body Font</label>
+            <select>
+              <option>DM Sans</option>
+              <option>Source Sans Pro</option>
+              <option>Nunito</option>
+              <option>Lato</option>
+              <option>Open Sans</option>
+              <option>Noto Sans</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── NAVIGATION ── -->
+    <div class="panel" id="panel-navigation">
+      <div class="card">
+        <div class="card-title">🔗 Main Navigation Links</div>
+        <div id="nav-links-list"></div>
+        <button class="add-btn" onclick="addNavLink()">+ Add Nav Link</button>
+      </div>
+    </div>
+
+    <!-- ── SEO ── -->
+    <div class="panel" id="panel-seo">
+      <div class="card">
+        <div class="card-title">🔍 SEO & Meta Tags</div>
+        <div class="field">
+          <label>Page Title (Browser Tab)</label>
+          <input type="text" value="DuonHoa Chinese International School — Phnom Penh">
+        </div>
+        <div class="field">
+          <label>Meta Description</label>
+          <textarea>DuonHoa Chinese International School offers world-class bilingual education from Preschool to High School in Phnom Penh, Cambodia.</textarea>
+        </div>
+        <div class="field">
+          <label>Keywords</label>
+          <input type="text" value="Chinese school Phnom Penh, international school Cambodia, bilingual education, DuonHoa">
+        </div>
+        <div class="field">
+          <label>OG Image URL (Social Share Preview)</label>
+          <input type="url" placeholder="https://duonhoa.edu.kh/og-image.jpg">
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Analytics</div>
+        <div class="field">
+          <label>Google Analytics Measurement ID</label>
+          <input type="text" placeholder="G-XXXXXXXXXX">
+        </div>
+        <div class="field">
+          <label>Facebook Pixel ID</label>
+          <input type="text" placeholder="123456789012345">
+        </div>
+      </div>
+    </div>
+
+    <!-- ── EXPORT ── -->
+    <div class="panel" id="panel-export">
+      <div class="card">
+        <div class="card-title">📤 Export Content</div>
+        <p style="color:var(--ink-soft);font-size:14px;line-height:1.7;margin-bottom:20px;">
+          Download your content as a JSON file. Share this with your developer to update the website, or use it to restore your settings later.
+        </p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <button class="save-all-btn" style="width:auto;padding:11px 28px;" onclick="exportJSON()">⬇ Download content.json</button>
+          <button class="save-all-btn" style="width:auto;padding:11px 28px;background:var(--ink);" onclick="importJSON()">⬆ Import content.json</button>
+        </div>
+        <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(this)">
+        <hr>
+        <div class="field">
+          <label>Raw JSON Preview</label>
+          <textarea id="json-preview" style="min-height:300px;font-family:monospace;font-size:12px;background:#f8f8fb;" readonly></textarea>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- .content-area -->
+</main>
+
+<div id="toast">Changes saved!</div>
+
+<script>
+// ── State ──────────────────────────────────────────────
+let state = {
+  general: { name:'DuonHoa', tagline:'Chinese International School', desc:'Building future leaders with Chinese and international education excellence in Phnom Penh, Cambodia.' },
+  hero: { heading:'Welcome to Excellence', sub1:'Building Future Leaders', sub2:'With Chinese and International Education', tag:'From Preschool to High School in Phnom Penh', cta1:'Enroll Now', cta2:'Learn More' },
+  programs: [
+    { name:'Preschool', ages:'Ages 3–5', desc:'Play-based learning with Chinese and English immersion, focusing on early childhood development.' },
+    { name:'Primary School', ages:'Grades 1–5', desc:'Strong foundation in core subjects with Chinese language integration and international pedagogy.' },
+    { name:'Secondary School', ages:'Grades 6–9', desc:'Challenging curriculum bridging Chinese and Western academic standards with STEM focus.' },
+    { name:'High School', ages:'Grades 10–12', desc:'University preparation with rigorous academics, college counseling, and leadership programs.' },
+  ],
+  features: [
+    { icon:'🇨🇳', title:'Chinese Curriculum', desc:'Authentic Chinese language and culture education.' },
+    { icon:'🌍', title:'International Standards', desc:'Globally recognized academic frameworks.' },
+    { icon:'👩‍🏫', title:'Experienced Teachers', desc:'Qualified educators from around the world.' },
+    { icon:'🛡', title:'Safe Environment', desc:'Secure, nurturing campus for all students.' },
+    { icon:'🗣', title:'Multilingual Education', desc:'English, Chinese, and Khmer instruction.' },
+    { icon:'🏆', title:'Academic Excellence', desc:'Consistent top results in national competitions.' },
+  ],
+  news: [
+    { title:'Students Win National Math Olympiad', date:'May 10, 2026', summary:'Our Grade 9 team brought home gold at the national competition.', category:'Achievement' },
+    { title:'Spring Festival Celebration 2026', date:'Feb 14, 2026', summary:'The school community celebrated Chinese New Year with performances and activities.', category:'Event' },
+    { title:'New Science Lab Opening', date:'Jan 20, 2026', summary:'A state-of-the-art science laboratory is now open for our secondary students.', category:'Facility' },
+  ],
+  testimonials: [
+    { quote:"DuonHoa has exceeded our expectations. My daughter has grown so much academically and personally.", author:'Parent of Grade 5 Student', rating:5 },
+  ],
+  contact: {
+    address:'123 Education Street, Phnom Penh, Cambodia',
+    phone:'+855 12 345 678',
+    email:'info@duonhoa.edu.kh',
+    hoursWeekday:'Mon - Fri: 7:30 AM - 5:00 PM',
+    hoursSat:'Sat: 8:00 AM - 12:00 PM',
+  },
+  footerLinks: ['About Us','Academic Programs','Admissions','Campus Life','News & Events'],
+  navLinks: ['About Us','Programs','Admissions','Campus Life','News & Events','Contact'],
+};
+
+// Load from localStorage if available
+try {
+  const saved = localStorage.getItem('duonhoa_cms');
+  if (saved) state = JSON.parse(saved);
+} catch(e) {}
+
+// ── Navigation ─────────────────────────────────────────
+const panelTitles = {
+  dashboard:'Dashboard',general:'General Info',hero:'Hero Section',
+  programs:'Academic Programs',features:'Why Choose Us',news:'News & Events',
+  testimonials:'Testimonials',contact:'Contact & Footer',branding:'Branding & Colors',
+  navigation:'Navigation Links',seo:'SEO & Meta',export:'Export / Publish'
+};
+
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  document.getElementById('panel-title').textContent = panelTitles[id];
+  event.currentTarget.classList.add('active');
+
+  if (id === 'programs') renderPrograms();
+  if (id === 'features') renderFeatures();
+  if (id === 'news') renderNews();
+  if (id === 'testimonials') renderTestimonials();
+  if (id === 'navigation') renderNavLinks();
+  if (id === 'export') renderJSON();
+  if (id === 'contact') renderFooterLinks();
+}
+
+// ── Render Repeaters ──────────────────────────────────
+function renderPrograms() {
+  const el = document.getElementById('programs-list');
+  el.innerHTML = state.programs.map((p,i) => `
+    <div class="repeater-item">
+      <div class="item-header">
+        <span class="item-num">Program ${i+1}</span>
+        <button class="remove-btn" onclick="removeItem('programs',${i})">✕ Remove</button>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Program Name</label><input type="text" value="${p.name}" onchange="updateItem('programs',${i},'name',this.value)"></div>
+        <div class="field"><label>Age / Grade Range</label><input type="text" value="${p.ages}" onchange="updateItem('programs',${i},'ages',this.value)"></div>
+      </div>
+      <div class="field"><label>Description</label><textarea onchange="updateItem('programs',${i},'desc',this.value)">${p.desc}</textarea></div>
+    </div>`).join('');
+  document.getElementById('programs-count').textContent = state.programs.length + ' items';
+  document.getElementById('stat-programs').textContent = state.programs.length;
+}
+
+function renderFeatures() {
+  const el = document.getElementById('features-list');
+  el.innerHTML = state.features.map((f,i) => `
+    <div class="repeater-item">
+      <div class="item-header">
+        <span class="item-num">Feature ${i+1}</span>
+        <button class="remove-btn" onclick="removeItem('features',${i})">✕ Remove</button>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Icon (emoji)</label><input type="text" value="${f.icon}" onchange="updateItem('features',${i},'icon',this.value)" style="max-width:80px;"></div>
+        <div class="field"><label>Feature Title</label><input type="text" value="${f.title}" onchange="updateItem('features',${i},'title',this.value)"></div>
+      </div>
+      <div class="field"><label>Short Description</label><input type="text" value="${f.desc}" onchange="updateItem('features',${i},'desc',this.value)"></div>
+    </div>`).join('');
+  document.getElementById('features-count').textContent = state.features.length + ' items';
+}
+
+function renderNews() {
+  const el = document.getElementById('news-list');
+  el.innerHTML = state.news.map((n,i) => `
+    <div class="repeater-item">
+      <div class="item-header">
+        <span class="item-num">Article ${i+1}</span>
+        <button class="remove-btn" onclick="removeItem('news',${i})">✕ Remove</button>
+      </div>
+      <div class="field"><label>Headline</label><input type="text" value="${n.title}" onchange="updateItem('news',${i},'title',this.value)"></div>
+      <div class="field-row">
+        <div class="field"><label>Date</label><input type="text" value="${n.date}" onchange="updateItem('news',${i},'date',this.value)"></div>
+        <div class="field"><label>Category</label><input type="text" value="${n.category}" onchange="updateItem('news',${i},'category',this.value)"></div>
+      </div>
+      <div class="field"><label>Summary</label><textarea onchange="updateItem('news',${i},'summary',this.value)">${n.summary}</textarea></div>
+    </div>`).join('');
+  document.getElementById('news-count').textContent = state.news.length + ' items';
+  document.getElementById('stat-news').textContent = state.news.length;
+}
+
+function renderTestimonials() {
+  const el = document.getElementById('testimonials-list');
+  el.innerHTML = state.testimonials.map((t,i) => `
+    <div class="repeater-item">
+      <div class="item-header">
+        <span class="item-num">Testimonial ${i+1}</span>
+        <button class="remove-btn" onclick="removeItem('testimonials',${i})">✕ Remove</button>
+      </div>
+      <div class="field"><label>Quote</label><textarea onchange="updateItem('testimonials',${i},'quote',this.value)">${t.quote}</textarea></div>
+      <div class="field-row">
+        <div class="field"><label>Author / Attribution</label><input type="text" value="${t.author}" onchange="updateItem('testimonials',${i},'author',this.value)"></div>
+        <div class="field"><label>Star Rating (1–5)</label>
+          <select onchange="updateItem('testimonials',${i},'rating',parseInt(this.value))">
+            ${[1,2,3,4,5].map(n=>`<option${t.rating===n?' selected':''}>${n}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+    </div>`).join('');
+  document.getElementById('testimonials-count').textContent = state.testimonials.length + ' item' + (state.testimonials.length !== 1 ? 's' : '');
+  document.getElementById('stat-testimonials').textContent = state.testimonials.length;
+}
+
+function renderNavLinks() {
+  const el = document.getElementById('nav-links-list');
+  el.innerHTML = state.navLinks.map((l,i) => `
+    <div class="repeater-item">
+      <div class="item-header">
+        <span class="item-num">Nav Item ${i+1}</span>
+        <button class="remove-btn" onclick="removeNavLink(${i})">✕ Remove</button>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Label</label><input type="text" value="${l}" onchange="state.navLinks[${i}]=this.value"></div>
+        <div class="field"><label>URL / Path</label><input type="url" placeholder="/about"></div>
+      </div>
+    </div>`).join('');
+}
+
+function renderFooterLinks() {
+  const el = document.getElementById('footer-links-list');
+  el.innerHTML = state.footerLinks.map((l,i) => `
+    <div class="repeater-item" style="padding:12px 16px;">
+      <div class="item-header" style="margin-bottom:8px;">
+        <span class="item-num">Link ${i+1}</span>
+        <button class="remove-btn" onclick="removeFooterLink(${i})">✕</button>
+      </div>
+      <div class="field-row">
+        <div class="field" style="margin-bottom:0"><label>Label</label><input type="text" value="${l}" onchange="state.footerLinks[${i}]=this.value"></div>
+        <div class="field" style="margin-bottom:0"><label>URL / Path</label><input type="url" placeholder="/about"></div>
+      </div>
+    </div>`).join('');
+}
+
+// ── Add / Remove ───────────────────────────────────────
+function addProgram() {
+  state.programs.push({ name:'New Program', ages:'Grades X–X', desc:'Program description here.' });
+  renderPrograms();
+}
+function addFeature() {
+  state.features.push({ icon:'⭐', title:'New Feature', desc:'Short description.' });
+  renderFeatures();
+}
+function addNews() {
+  const today = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  state.news.push({ title:'New Article Title', date:today, summary:'Article summary.', category:'News' });
+  renderNews();
+}
+function addTestimonial() {
+  state.testimonials.push({ quote:'Quote text here.', author:'Parent / Student', rating:5 });
+  renderTestimonials();
+}
+function addNavLink() { state.navLinks.push('New Link'); renderNavLinks(); }
+function addFooterLink() { state.footerLinks.push('New Link'); renderFooterLinks(); }
+
+function removeItem(key, idx) {
+  state[key].splice(idx,1);
+  if(key==='programs') renderPrograms();
+  if(key==='features') renderFeatures();
+  if(key==='news') renderNews();
+  if(key==='testimonials') renderTestimonials();
+}
+function removeNavLink(idx) { state.navLinks.splice(idx,1); renderNavLinks(); }
+function removeFooterLink(idx) { state.footerLinks.splice(idx,1); renderFooterLinks(); }
+function updateItem(key, idx, field, val) { state[key][idx][field] = val; }
+
+// ── Save ───────────────────────────────────────────────
+function saveAll() {
+  try { localStorage.setItem('duonhoa_cms', JSON.stringify(state)); } catch(e){}
+  toast('All changes saved!');
+  const tag = document.getElementById('saved-tag');
+  tag.classList.add('show');
+  setTimeout(()=>tag.classList.remove('show'), 3000);
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+// ── Export / Import ────────────────────────────────────
+function renderJSON() {
+  document.getElementById('json-preview').value = JSON.stringify(state, null, 2);
+}
+
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'duonhoa-content.json'; a.click();
+  toast('content.json downloaded!');
+}
+
+function importJSON() { document.getElementById('import-file').click(); }
+
+function handleImport(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      state = JSON.parse(e.target.result);
+      toast('Content imported!');
+      renderJSON();
+    } catch { toast('Invalid JSON file'); }
+  };
+  reader.readAsText(file);
+}
+
+// ── Helpers ────────────────────────────────────────────
+function syncColor(picker, textId) {
+  document.getElementById(textId).value = picker.value;
+}
+
+function triggerUpload(wrapper) {
+  wrapper.querySelector('input[type="file"]').click();
+}
+
+function previewImage(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  const img = input.parentElement.querySelector('.image-preview');
+  reader.onload = e => { img.src = e.target.result; img.style.display = 'block'; };
+  reader.readAsDataURL(file);
+}
+
+function previewSite() {
+  toast('Saving before preview...');
+  saveAll();
+  setTimeout(()=>{ window.open('index.html','_blank'); }, 400);
+}
+
+// ── Init ───────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // Initial dashboard stats
+  document.getElementById('stat-programs').textContent = state.programs.length;
+  document.getElementById('stat-news').textContent = state.news.length;
+  document.getElementById('stat-testimonials').textContent = state.testimonials.length;
+});
+</script>
+</body>
+</html>
